@@ -40,7 +40,7 @@ def conv_param( output_dim, input_dim, ksize, stride=1, scale=None ):
 
     return uniform_param( shape, scale=scale )
 
-def deconv_param( output_dim, input_dim, ksize, stride=2, scale=None, name=u'' ):
+def deconv_param( output_dim, input_dim, ksize, stride=2, scale=None, name='' ):
     fan_in  = input_dim  * ksize**2 / (stride**2)
     fan_out = output_dim * ksize**2
 
@@ -58,15 +58,15 @@ def Act( X, act_type, real_f=False ):
     if real_f:
         return Act_real( X, act_type )
         
-    if act_type==u'sigmoid':
+    if act_type=='sigmoid':
         __f = T.nnet.sigmoid
-    elif act_type==u'tanh':
+    elif act_type=='tanh':
         __f = T.tanh
-    elif act_type==u'softmax':
+    elif act_type=='softmax':
         __f = T.nnet.softmax
-    elif act_type==u'relu':
+    elif act_type=='relu':
         __f = lambda X: T.nnet.relu(X,relu_alpha)
-    elif act_type==u'softplus':
+    elif act_type=='softplus':
         __f = T.nnet.softplus
 
     return __f(X)
@@ -74,13 +74,13 @@ def Act( X, act_type, real_f=False ):
 def Act_real( X, act_type ):
     global relu_alpha
     
-    if act_type==u'sigmoid':
+    if act_type=='sigmoid':
         exit(-1)
-    elif act_type==u'tanh':
+    elif act_type=='tanh':
         __f = np.tanh
-    elif act_type==u'softmax':
+    elif act_type=='softmax':
         __f = softmax
-    elif act_type==u'relu':
+    elif act_type=='relu':
         __f = lambda X : relu(X,relu_alpha)
     elif act_type==u'softplus':
         exit(-1)

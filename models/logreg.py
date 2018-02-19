@@ -1,5 +1,9 @@
 # coding : utf-8
 
+"""
+Logistic regression for multiclass classificcation problems.
+"""
+
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
 import time
@@ -13,7 +17,7 @@ from models.classifier import Classifier
 from optimizers import AGD
 
 class LogReg( Classifier ):
-    def __init__( self, shape, wr=None, eta=1e-2, momentum=0.9, scale=1., 
+    def __init__( self, shape, wr=0, eta=1e-2, momentum=0.9, scale=1., 
                   minibatch_size=10, seed=99 ):
         """
         shape          : tuple of integers.
@@ -64,19 +68,19 @@ class LogReg( Classifier ):
         self.compile()
 
         # optimizer.
-        self.optimizer  = AGD( self, eta=eta, momentum=momentum )
+        self.optimizer = AGD( self, eta=eta, momentum=momentum )
 
     def show_param( self, shape, wr, eta, momentum, scale,
                     minibatch_size, seed ):
-        logging.info('- LogReg hyperparameters -')
-        logging.info( '{0:<15}{1:>11}'.format( 'dim', shape[0] ) )
-        logging.info( '{0:<15}{1:>11}'.format( 'n_class', shape[1] ) )
-        logging.info( '{0:<15}{1:>11.7}'.format( 'wr', wr ) )
-        logging.info( '{0:<15}{1:>11.7f}'.format( 'eta', eta ) )
-        logging.info( '{0:<15}{1:>11.7f}'.format( 'momentum', momentum ) )
-        logging.info( '{0:<15}{1:>11.7f}'.format( 'scale', scale ) )
-        logging.info( '{0:<15}{1:>11}'.format( 'minibatch_size', minibatch_size ) )
-        logging.info( '{0:<15}{1:>11}'.format( 'seed', seed ) )
+        logging.info( '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'LogReg setting', '-'*5 ) )
+        logging.info( '{0:<15}{1:>21}'.format( 'dim', shape[0] ) )
+        logging.info( '{0:<15}{1:>21}'.format( 'n_class', shape[1] ) )
+        logging.info( '{0:<15}{1:>21.7}'.format( 'wr', wr ) )
+        logging.info( '{0:<15}{1:>21.7f}'.format( 'eta', eta ) )
+        logging.info( '{0:<15}{1:>21.7f}'.format( 'momentum', momentum ) )
+        logging.info( '{0:<15}{1:>21.7f}'.format( 'scale', scale ) )
+        logging.info( '{0:<15}{1:>21}'.format( 'minibatch_size', minibatch_size ) )
+        logging.info( '{0:<15}{1:>21}'.format( 'seed', seed ) )
 
     def compile( self ):
         self.predict   = theano.function( [self.Z], self.pred )

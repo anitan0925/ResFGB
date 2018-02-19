@@ -7,7 +7,7 @@ from utils import minibatches
 from models.model import Model
 import numpy as np
 
-class Classifier(Model):
+class Regressor(Model):
     def __init__( self, eta, scale, minibatch_size, seed ):
         """
         eta            : float.
@@ -17,34 +17,31 @@ class Classifier(Model):
         seed           : integer.
                          Seed for random module.
         """
-        super( Classifier, self ).__init__( seed )
+        super( Regressor, self ).__init__( seed )
 
         self.__eta          = eta
         self.__scale        = scale
         self.minibatch_size = minibatch_size
-
+    
     def evaluate( self, Z, Y ):
-        n, nc, loss = 0, 0, 0.
+        n, loss = 0, 0.
         minibatch_size = np.min( (10000, Z.shape[0]) )
         for (Zb,Yb) in minibatches( minibatch_size, Z, Y, shuffle=False ):
-            (loss_,n_,nc_) = self.__calc_accuracy( Zb, Yb )
-            loss = (n/(n+n_))*loss + (n_/(n+n_))*loss_
-            n   += n_
-            nc  += nc_
-        acc = nc/n
+            n_ = Zb.shape[0]
+            loss_ = self.loss_func(Zb,Yb)
+            loss  = (n/(n+n_))*loss + (n_/(n+n_))*loss_
+            n    += n_
 
-        return loss, acc
+        return loss + self.reg_func()
 
-    def __calc_accuracy( self, Z, Y):
-        n = float( len(Y) )
-        loss = self.loss_func(Z,Y)
-        reg = self.reg_func()
-        pred = self.predict(Z) 
-        n_correct = np.sum( [ int(py==y) for (py,y) in zip(pred,Y) ] )
-        return (loss + reg, n, n_correct )
+    def __save_param( self ):
+        self.__saved_params = self.get_params( real_f=True )
+
+    def __load_param( self ):
+        self.set_params( self.__saved_params, real_f=True )
 
     def evaluate_eta( self, X, Y, eta, eval_iters ):
-        self.save_params()
+        self.__save_param()
         self.optimizer.set_eta(eta)
 
         n_iters = 0
@@ -57,14 +54,14 @@ class Classifier(Model):
                 self.optimizer.update_func(Xb,Yb)
                 n_iters += 1
 
-        val = self.evaluate(X,Y)[0]
-        self.load_params()
+        val = self.evaluate(X,Y)
+        self.__load_param()
         self.optimizer.reset_func()
 
         return val
 
     def determine_eta( self, X, Y, eval_iters=10000, factor=2., level=logging.INFO ):
-        val0     = self.evaluate( X, Y )[0]
+        val0     = self.evaluate( X, Y )
 
         low_eta  = self.__eta
         low_val  = self.evaluate_eta( X, Y, low_eta,  eval_iters )
@@ -101,56 +98,46 @@ class Classifier(Model):
 
         logging.log( level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
 
-    def fit( self, X, Y, max_epoch, Xv=None, Yv=None, early_stop=-1,
-             set_best_param=False, level=logging.INFO ):
+    def fit( self, X, Y, max_epoch, early_stop=-1, level=logging.INFO ):
         """
-        Run algorigthm for up to (max_eopch) epochs on training data X.
+        Run algorigthm for up to (max_epoch) on training data X.
         
         Arguments
         ---------
+        optimizer  : Instance of optimizer class.
         X          : Numpy array. 
                      Training data.
-        Y          : numpy array.
+        Y          : Numpy array.
                      Training label.
         max_epoch  : Integer.
-        Xv         : Numpy array.
-                     Validation data.
-        Yv         : Numpy array.
-                     Validation label.
         early_stop : Integer.
         level      : Integer.
         """
 
         logging.log( level, 
-                     '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'Training classifier', '-'*5 ) )
+                     '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'Training regressor', '-'*5 ) )
 
-        best_val_loss = 1e+10
-        best_val_acc  = 0.
-        best_param    = None
-        best_epoch    = 0
-        val_results   = []
         total_time = 0.
-        best_loss = 1e+10
 
-        monitor = True if Xv is not None else False
-
-        self.save_params()
+        self.__save_param()
         success = False
 
-        init_train_loss, init_train_acc = self.evaluate( X, Y )
+        init_train_loss = self.evaluate( X, Y )
+        best_loss  = 1e+10
+        best_epoch = 0
 
         while success is False:
             success = True
 
             for e in range(max_epoch):
                 stime = time.time()
-                for (Xb,Yb)  in minibatches( self.minibatch_size,
-                                             X, Y, shuffle=True ):
+                for (Xb,Yb) in minibatches( self.minibatch_size,
+                                            X, Y, shuffle=True ):
                     self.optimizer.update_func(Xb,Yb)
                 etime = time.time()
                 total_time += etime-stime
 
-                train_loss, train_acc = self.evaluate( X, Y )
+                train_loss = self.evaluate( X, Y )
                 if np.isnan(train_loss) or np.isinf(train_loss) \
                    or (2*init_train_loss + 1) <= train_loss:
                     eta = self.optimizer.get_eta() / 2.
@@ -165,24 +152,9 @@ class Classifier(Model):
 
                 logging.log( level,  'epoch: {0:4}, time: {1:>13.1f} sec'\
                              .format( e, total_time ) )
-                logging.log( level,  'train_loss: {0:5.4f}, train_acc: {1:4.3f}'\
-                             .format( train_loss, train_acc ) )
+                logging.log( level,  'train_loss: {0:5.4f}'.format( train_loss ) )
 
-                if monitor:
-                    val_loss, val_acc = self.evaluate( Xv, Yv )
-                    logging.log( level,  'val_loss  : {0:5.4f}, val_acc  : {1:4.3f}'\
-                                 .format( val_loss, val_acc ) )
-
-                    val_results.append( ( {'epoch' : e+1},
-                                          val_loss, val_acc) )
-                
-                    if val_loss < best_val_loss:
-                        best_epoch    = e+1
-                        best_val_loss = val_loss
-                        best_val_acc  = val_acc
-                        best_param    = self.get_params( real_f=True )
-                
-                # early_stopping
+                # early_stopping 
                 if train_loss < 0.999*best_loss:
                     best_loss = train_loss
                     best_epoch = e
@@ -191,8 +163,4 @@ class Classifier(Model):
                     success = True
                     break
 
-        if monitor and set_best_param:
-            if best_epoch < self.epoch:
-                self.set_params( best_param )
-
-        return val_results
+        return None
