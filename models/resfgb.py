@@ -12,13 +12,6 @@ import numpy as np
 import theano
 from models import LogReg, SVM, ResGrad
 
-"""
-- model_hparams -
-shape, wr2=1e-5,
-eta=1e-2, tune_eta=False, scale=1., epoch=None, early_stop=-1,
-momentum=0.9, minibatch_size=10,
-"""
-
 class ResFGB( object ):
     def __init__( self, model_type=u'logreg', model_hparams={}, resblock_hparams={},
                   fg_eta=None, max_iters=10, seed=99, proc_batch_size=10000 ):
