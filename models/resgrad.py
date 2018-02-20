@@ -50,6 +50,9 @@ class ResGrad( object ):
         However, note that it may slow down the computation time for small/middle-data sets.
         """
         self.__batch_size__ = proc_batch_size
+
+        self.__regressor_params__ = []
+        self.__current_itr__ = -1
         
         # compile 
         self.__regressor__  = MLPBlock( seed=seed, **resblock_hparams )
@@ -69,7 +72,15 @@ class ResGrad( object ):
     def predict( self, X ):
         return self.apply( X )
 
-    def solve_approximation( self, Z, zgrads, n_iter ):
+    def set_regressor_params( self, l ):
+        if self.__current_itr__ == l or l < 0:
+            return
+        else:
+            self.__current_itr__ = l
+            self.__regressor__.set_params( self.__regressor_params__[l] )
+
+    def solve_gradient( self, Z, zgrads, n_layers ):
+        self.set_regressor_params( n_layers-1 )
         self.__regressor__.optimizer.reset_func()
 
         eps = 1e-10
@@ -77,14 +88,21 @@ class ResGrad( object ):
         logging.log( logging.DEBUG, 'min: {0:12.5f}, max: {1:12.5f}'\
                      .format( np.min(znorm), np.max(znorm) ) )
 
-        if self.__tune_eta__ and (n_iter==0):
+        if self.__tune_eta__ and (n_layers==0):
             self.__regressor__.determine_eta( Z, zgrads / znorm[:,None] )
 
         self.__regressor__.fit( Z, zgrads / znorm[:,None], self.__max_epoch__,
                                 early_stop=self.__early_stop__,
                                 level=logging.INFO )
 
-    def compute_weight( self, Z, Y, n_iter ):
+        self.__current_itr__ = len( self.__regressor_params__ )
+        self.__regressor_params__.append( self.__regressor__.get_params(real_f=True) )
+
+    def approximate_gradient( self, Z, l ):
+        self.set_regressor_params(l)
+        return self.__regressor__.predict(Z)
+
+    def compute_weight( self, Z, Y ):
         """
         Compute the weight matrix for functional gradient method.
 
@@ -96,15 +114,16 @@ class ResGrad( object ):
             Represents label.
         """
         n, d = Z.shape
+        n_layers = len( self.params )
 
         fullbatch_mode = True if n <= self.__batch_size__ or self.__batch_size__ is None else False
 
         if fullbatch_mode:
             # (n, d)
             zgrads = self.__zgrad_func__(Z,Y)
-
-            self.solve_approximation( Z, zgrads, n_iter )
-            Zl = self.__regressor__.predict(Z) 
+            
+            self.solve_gradient( Z, zgrads, n_layers )
+            Zl = self.approximate_gradient( Z, n_layers )
 
             # Zl: (n,emb_dim), zgrads: (n,d)
             # Wl: (emb_dim,d)
@@ -121,14 +140,14 @@ class ResGrad( object ):
 
             zgrads = np.vstack( zgrads )
 
-            self.solve_approximation( Z, zgrads, n_iter )
+            self.solve_gradient( Z, zgrads, n_layers )
 
             for i, start in enumerate( range(0,n,self.__batch_size__) ):
                 end = min( n, start+self.__batch_size__ )
                 Zb = Z[start:end]
                 Yb = Y[start:end]
                 zgradb = zgrads[start:end]
-                Zlb = self.__regressor__.predict(Zb)
+                Zlb = self.approximate_gradient( Zb, n_layers )
 
                 # (batch,d)
                 b = Zb.shape[0]
@@ -157,13 +176,11 @@ class ResGrad( object ):
 
             for i, Wl in enumerate( self.params[lfrom:] ):
                 l = lfrom + i
-                Wl = Wl
-
-                Zk = self.__regressor__.predict(Z) 
+                Zk = self.approximate_gradient( Z, l )
                 Tk = __dot__( Zk, Wl )
                 Z -= Tk
             
-            return Z.asnumpy()
+            return Z
         else:
             Z = []
             for start in range(0,n,self.__batch_size__):
@@ -173,9 +190,7 @@ class ResGrad( object ):
 
                 for i, Wl in enumerate( self.params[lfrom:] ):
                     l = lfrom + i
-                        
-                    Zkb = self.__regressor__.predict(Zb)
-
+                    Zkb = self.approximate_gradient( Zb, l )
                     Tkb = __dot__( Zkb, Wl )
                     Zb -= Tkb
 

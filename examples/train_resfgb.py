@@ -44,7 +44,7 @@ model_hparams = { 'shape'          : (input_dim,n_class),
                   'momentum'       : 0.9, 
                   'minibatch_size' : 100,
                   'scale'          : 1.0, 
-                  'max_epoch'      : 20,
+                  'max_epoch'      : 30,
                   'tune_eta'       : True,
                   'early_stop'     : 10 }
 
@@ -55,18 +55,18 @@ resblock_hparams = { 'shape'          : (input_dim,100,100,100,100,input_dim),
                      'minibatch_size' : 100,
                      'scale'          : 1.0, 
                      'max_epoch'      : 20,
-                     'tune_eta'       : True,
+                     'tune_eta'       : False,
                      'early_stop'     : 10 }
 
-hparams = { 'model_type' : 'logreg',
-            'model_hparams' : model_hparams, 
+hparams = { 'model_type'       : 'logreg',
+            'model_hparams'    : model_hparams, 
             'resblock_hparams' : resblock_hparams, 
-            'fg_eta' : 1e-1,
-            'max_iters' : 2,
-            'seed' : seed }
+            'fg_eta'           : 1e-1,
+            'max_iters'        : 30,
+            'seed'             : seed }
 
 model = ResFGB( **hparams )
-model.fit( X, Y, Xt, Yt )
+model.fit( X, Y, Xt, Yt, set_best_param=False )
 
 train_loss, train_acc = model.evaluate( X, Y )
 

@@ -115,7 +115,7 @@ class ResFGB( object ):
 
             #----- compute weight matrix -----
             stime = time.time()
-            self.__fg__.compute_weight( Z, Y, n_iter )
+            self.__fg__.compute_weight( Z, Y )
             etime = time.time()
             total_time += etime-stime
 
