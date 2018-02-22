@@ -23,7 +23,7 @@ def save( train_url, train_file, test_url=None, test_file=None ):
         
     X_, Y_, xdic, ydic = binarize_libsvm_data.preprocess( train_raw, bz2_f=bz2_f )
     if test_f:
-        Xt_, Yt_, xdic, ydic = binarize_libsvm_data.preprocess( test_raw, bz2_f=bz2_f )
+        Xt_, Yt_, xdic, ydic = binarize_libsvm_data.preprocess( test_raw, xdic, ydic, bz2_f=bz2_f )
     else:
         Xt_, Yt_ = None, None
 
@@ -112,7 +112,7 @@ def get_covtype():
     standardize = True
     scale       = False
 
-    if not os.path.exists( train_file ) or not os.path.exists( test_file ):
+    if not os.path.exists( train_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/covtype.scale01.bz2'
         save( train_url, train_file, None, None )
         
