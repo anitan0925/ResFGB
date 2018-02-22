@@ -38,10 +38,12 @@ if dataset == 'letter':
     hparams['model_hparams']['wr']            = 1e-6
     hparams['model_hparams']['max_epoch']     = 100
     hparams['model_hparams']['early_stop']    = -1
+    hparams['model_hparams']['eval_iters']    = 10000
     hparams['resblock_hparams']['shape']      = (input_dim,1000,1000,1000,input_dim)
     hparams['resblock_hparams']['wr']         = 1e-6
     hparams['resblock_hparams']['max_epoch']  = 100
     hparams['resblock_hparams']['early_stop'] = 10
+    hparams['resblock_hparams']['eval_iters'] = 10000   
     hparams['fg_eta']    = 1e-2
     hparams['max_iters'] = 21
 
@@ -49,10 +51,12 @@ elif dataset == 'usps':
     hparams['model_hparams']['wr']            = 1e-4
     hparams['model_hparams']['max_epoch']     = 200
     hparams['model_hparams']['early_stop']    = -1
+    hparams['model_hparams']['eval_iters']    = 10000
     hparams['resblock_hparams']['shape']      = (input_dim,1000,1000,1000,input_dim)
     hparams['resblock_hparams']['wr']         = 1e-4
     hparams['resblock_hparams']['max_epoch']  = 100
     hparams['resblock_hparams']['early_stop'] = 10
+    hparams['resblock_hparams']['eval_iters'] = 10000
     hparams['fg_eta']    = 1e+0
     hparams['max_iters'] = 1
 
@@ -60,10 +64,12 @@ elif dataset == 'ijcnn1':
     hparams['model_hparams']['wr']            = 1e-5
     hparams['model_hparams']['max_epoch']     = 50
     hparams['model_hparams']['early_stop']    = -1
+    hparams['model_hparams']['eval_iters']    = 10000
     hparams['resblock_hparams']['shape']      = (input_dim,100,100,100,100,input_dim)
     hparams['resblock_hparams']['wr']         = 1e-5
     hparams['resblock_hparams']['max_epoch']  = 20
     hparams['resblock_hparams']['early_stop'] = 10
+    hparams['resblock_hparams']['eval_iters'] = 10000
     hparams['fg_eta']    = 1e-1
     hparams['max_iters'] = 28
 
@@ -71,10 +77,12 @@ elif dataset == 'mnist':
     hparams['model_hparams']['wr']            = 1e-6
     hparams['model_hparams']['max_epoch']     = 20
     hparams['model_hparams']['early_stop']    = -1
+    hparams['model_hparams']['eval_iters']    = 10000
     hparams['resblock_hparams']['shape']      = (input_dim,1000,1000,1000,input_dim)
     hparams['resblock_hparams']['wr']         = 1e-6
     hparams['resblock_hparams']['max_epoch']  = 20
     hparams['resblock_hparams']['early_stop'] = 10
+    hparams['resblock_hparams']['eval_iters'] = 10000
     hparams['fg_eta']    = 1e-1
     hparams['max_iters'] = 8
 
@@ -82,10 +90,12 @@ elif dataset == 'covtype':
     hparams['model_hparams']['wr']            = 1e-6
     hparams['model_hparams']['max_epoch']     = 10
     hparams['model_hparams']['early_stop']    = -1
+    hparams['model_hparams']['eval_iters']    = 10000
     hparams['resblock_hparams']['shape']      = (input_dim,1000,1000,1000,input_dim)
     hparams['resblock_hparams']['wr']         = 1e-6
     hparams['resblock_hparams']['max_epoch']  = 20
     hparams['resblock_hparams']['early_stop'] = 10
+    hparams['resblock_hparams']['eval_iters'] = 10000
     hparams['fg_eta']    = 1e-3
     hparams['max_iters'] = 50
 
