@@ -28,7 +28,7 @@ def load( trainfile_name, testfile_name,
         fin = open( testfile_name, u'rb' )
         [Xt,Yt] = cPickle.load(fin)
         fin.close()
-    elif split:
+    elif testfile_name is None and split:
         train_size = int( train_ratio * X.shape[0] )
         indices = range( X.shape[0] )
         if shuffle:

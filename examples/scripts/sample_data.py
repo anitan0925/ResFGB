@@ -38,13 +38,15 @@ def save( train_url, train_file, test_url=None, test_file=None ):
         cPickle.dump( [Xt,Yt], fout )
         fout.close()
 
+normalize_f   = False
+bias_f        = True
+
 def get_ijcnn1():
     train_file = './data/ijcnn1.data'
     test_file = './data/ijcnn1.t.data'
-    split = True
+    split       = False
     standardize = True
-    normalize   = False
-    bias        = True
+    scale_f     = False
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/ijcnn1.bz2'
@@ -55,3 +57,66 @@ def get_ijcnn1():
                                      standardize, normalize, bias )
     return X, Y, Xt, Yt
         
+def get_usps():
+    train_file = './data/usps.data'
+    test_file = './data/usps.t.data'
+    split       = False
+    standardize = False
+    scale_f     = True
+
+    if not os.path.exists( train_file ) or not os.path.exists( test_file ):
+        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/usps.bz2'
+        test_url  = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/usps.t.bz2'
+        save( train_url, train_file, test_url, test_file )
+        
+    X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
+                                     standardize, normalize, bias )
+    return X, Y, Xt, Yt
+
+def get_letter():
+    train_file = './data/letter.data'
+    test_file = './data/letter.t.data'
+    split       = False
+    standardize = False
+    scale_f     = True
+
+    if not os.path.exists( train_file ) or not os.path.exists( test_file ):
+        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/letter.scale'
+        test_url  = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/letter.scale.t'
+        save( train_url, train_file, test_url, test_file )
+        
+    X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
+                                     standardize, normalize, bias )
+    return X, Y, Xt, Yt
+        
+def get_mnist():
+    train_file = './data/mnist.data'
+    test_file = './data/mnist.t.data'
+    split       = False
+    standardize = False
+    scale_f     = True
+
+    if not os.path.exists( train_file ) or not os.path.exists( test_file ):
+        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.bz2'
+        test_url  = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.t.bz2'
+        save( train_url, train_file, test_url, test_file )
+        
+    X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
+                                     standardize, normalize, bias )
+    return X, Y, Xt, Yt
+
+def get_covtype():
+    train_file  = './data/covtype.data'
+    test_file   = './data/covtype.t.data'
+    split       = True
+    standardize = True
+    scale_f     = False
+
+    if not os.path.exists( train_file ) or not os.path.exists( test_file ):
+        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/covtype.scale01.bz2'
+        save( train_url, train_file, None, None )
+        
+    X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
+                                     standardize, normalize, bias )
+    return X, Y, Xt, Yt
+3

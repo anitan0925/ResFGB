@@ -1,8 +1,7 @@
 # coding : utf-8
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import sys
-import logging
+import sys, logging
 import numpy as np
 from resfgb.models import ResFGB, LogReg, SVM, get_hyperparams
 from scripts import sample_data
