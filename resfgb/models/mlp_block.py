@@ -63,8 +63,9 @@ class MLPBlock( Regressor ):
                 val += T.sum( self.params[l]**2 )
             self.reg = 0.5 * wr * val
         else:
-            self.wr = 0
-            self.reg = 0
+            logging.log( logging.ERROR, 
+                         'negative regularization parameter is given: {0}'.format(wr) )
+            sys.exit(-1)
 
         self.sgrad = T.grad( cost=self.loss + self.reg, wrt=self.params )
 
@@ -78,7 +79,6 @@ class MLPBlock( Regressor ):
                     minibatch_size, eval_iters, seed ):
         logging.info( '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'MLPBlock setting', '-'*5 ) )
         logging.info( '{0:<5}{1:>31}'.format( 'shape', ' '.join( map(str,shape) ) ) )
-        logging.info( '{0:<15}{1:>21}'.format( 'n_class', shape[1] ) )
         logging.info( '{0:<15}{1:>21.7}'.format( 'wr', wr ) )
         logging.info( '{0:<15}{1:>21.7f}'.format( 'eta', eta ) )
         logging.info( '{0:<15}{1:>21.7f}'.format( 'momentum', momentum ) )

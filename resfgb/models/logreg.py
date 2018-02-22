@@ -60,8 +60,9 @@ class LogReg( Classifier ):
             else:
                 self.reg = 0.5 * wr * T.sum( self.params[0]**2 )
         else:
-            self.wr = 0
-            self.reg = 0
+            logging.log( logging.ERROR, 
+                         'negative regularization parameter is given: {0}'.format(wr) )
+            sys.exit(-1)
 
         self.sgrad = T.grad( cost=self.loss + self.reg, wrt=self.params )
 

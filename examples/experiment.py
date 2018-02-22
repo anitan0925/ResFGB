@@ -25,12 +25,12 @@ elif dataset == 'mnist':
 elif dataset == 'covtype':
     X, Y, Xt, Yt = sample_data.get_covtype()
 
-logging.info( 'train size: {0}, validation size: {1}, test size: {2}'\
-              .format( X.shape[0],Xv.shape[0],Xt.shape[0] ) )
+logging.info( 'train size: {0}, test size: {1}'\
+              .format( X.shape[0],Xt.shape[0] ) )
 
 # Build model and train.
 (n_data, input_dim) = X.shape
-n_class = len( set(Y) | set(Yv) | set(Yt) )
+n_class = len( set(Y) | set(Yt) )
 
 hparams = get_hyperparams( n_data, input_dim, n_class )
 
@@ -49,7 +49,7 @@ elif dataset == 'usps':
     hparams['model_hparams']['wr']            = 1e-4
     hparams['model_hparams']['max_epoch']     = 200
     hparams['model_hparams']['early_stop']    = -1
-    hparams['resblock_hparams']['shape']      = (input_dim,1000,1000,1000,input_dim),
+    hparams['resblock_hparams']['shape']      = (input_dim,1000,1000,1000,input_dim)
     hparams['resblock_hparams']['wr']         = 1e-4
     hparams['resblock_hparams']['max_epoch']  = 100
     hparams['resblock_hparams']['early_stop'] = 10
