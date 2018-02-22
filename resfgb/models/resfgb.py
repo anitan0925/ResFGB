@@ -5,12 +5,10 @@ ResFGB for multiclass classificcation problems.
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import logging
-import time
-import sys
+import logging, time, sys
 import numpy as np
 import theano
-from models import LogReg, SVM, ResGrad
+from resfgb.models import LogReg, SVM, ResGrad
 
 class ResFGB( object ):
     def __init__( self, model_type=u'logreg', model_hparams={}, resblock_hparams={},
@@ -29,9 +27,9 @@ class ResFGB( object ):
         del model_hparams['max_epoch']
         del model_hparams['early_stop']
 
-        if model_type == u'logreg':
+        if model_type == u'logistic':
             self.__model__ = LogReg( seed=seed, **model_hparams )
-        elif model_type == u'svm':
+        elif model_type == u'smooth_hinge':
             self.__model__ = SVM( seed=seed, **model_hparams )
         else:
             logging.log( logging.ERROR, 'invalid model_type: {0}'.format(model_type) )
@@ -59,7 +57,7 @@ class ResFGB( object ):
 
         return loss, acc
 
-    def fit( self, X, Y, Xv=None, Yv=None, set_best_param=False ):
+    def fit( self, X, Y, Xv=None, Yv=None, use_best_iter=False ):
 
         logging.info( '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'Training ResFGB', '-'*5 ) )
 
@@ -91,8 +89,8 @@ class ResFGB( object ):
             if self.__tune_eta__ and (n_iter==0):
                 self.__model__.determine_eta( Z, Y )
 
-            self.__model__.fit( Z, Y, self.__max_epoch__, early_stop=self.__early_stop__, 
-                                level=logging.DEBUG )
+            self.__model__.fit( Z, Y, self.__max_epoch__, early_stop=self.__early_stop__ ) 
+
             etime = time.time()
             total_time += etime-stime
 
@@ -128,8 +126,8 @@ class ResFGB( object ):
 
         #----- fit and evaluate -----
         self.__model__.optimizer.reset_func()
-        self.__model__.fit( Z, Y, self.__max_epoch__, early_stop=self.__early_stop__, 
-                            level=logging.DEBUG )
+        self.__model__.fit( Z, Y, self.__max_epoch__, early_stop=self.__early_stop__ ) 
+
         etime = time.time()
         total_time += etime-stime
 
@@ -151,15 +149,15 @@ class ResFGB( object ):
                 best_param    = self.__model__.get_params( real_f=True )
 
         #----- finalize -----
-        if monitor and set_best_param is True:
+        if monitor and use_best_iter is True:
             if best_n_layers < self.__max_iters__:
                 del self.__fg__.params[ best_n_layers: ]
                 self.__model__.set_params( best_param )
 
         if monitor: 
-            if set_best_param is True:
+            if use_best_iter is True:
                 return (best_n_layers, best_val_loss, best_val_acc)
-            elif set_best_param is False:
+            else:
                 return (self.__max_iters__, val_loss, val_acc)
         else:
             return (None, None, None)

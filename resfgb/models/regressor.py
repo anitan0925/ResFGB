@@ -1,19 +1,20 @@
 # coding : utf-8
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import logging
-import time
-from utils import minibatches
-from models.model import Model
+import logging, time
 import numpy as np
+from resfgb.utils import minibatches
+from resfgb.models.model import Model
 
 class Regressor(Model):
-    def __init__( self, eta, scale, minibatch_size, seed ):
+    def __init__( self, eta, scale, minibatch_size, eval_iters, seed, log_level ):
         """
         eta            : float.
         scale          : float
         minibatch_size : integer.
                          Minibatch size to calcurate stochastic gradient.
+        eval_iters     : Integer.
+                         The number of iterations for evaluating eta.
         seed           : integer.
                          Seed for random module.
         """
@@ -22,6 +23,8 @@ class Regressor(Model):
         self.__eta          = eta
         self.__scale        = scale
         self.minibatch_size = minibatch_size
+        self.eval_iters     = eval_iters
+        self.log_level      = log_level
     
     def evaluate( self, Z, Y ):
         n, loss = 0, 0.
@@ -40,7 +43,7 @@ class Regressor(Model):
     def __load_param( self ):
         self.set_params( self.__saved_params, real_f=True )
 
-    def evaluate_eta( self, X, Y, eta, eval_iters ):
+    def evaluate_eta( self, X, Y, eta ):
         self.__save_param()
         self.optimizer.set_eta(eta)
 
@@ -48,7 +51,7 @@ class Regressor(Model):
         eval_f = True
         while eval_f:
             for (Xb,Yb) in minibatches( self.minibatch_size, X, Y, shuffle=True ):
-                if n_iters >= eval_iters:
+                if n_iters >= self.eval_iters:
                     eval_f = False
                     break
                 self.optimizer.update_func(Xb,Yb)
@@ -60,15 +63,15 @@ class Regressor(Model):
 
         return val
 
-    def determine_eta( self, X, Y, eval_iters=10000, factor=2., level=logging.INFO ):
+    def determine_eta( self, X, Y, factor=2. ):
         val0     = self.evaluate( X, Y )
 
         low_eta  = self.__eta
-        low_val  = self.evaluate_eta( X, Y, low_eta,  eval_iters )
+        low_val  = self.evaluate_eta( X, Y, low_eta )
         low_val  = np.inf if np.isnan( low_val ) else low_val
 
         high_eta = factor * low_eta
-        high_val = self.evaluate_eta( X, Y, high_eta, eval_iters )
+        high_val = self.evaluate_eta( X, Y, high_eta )
         high_val = np.inf if np.isnan( high_val ) else high_val
 
         decrease_f = True if ( np.isinf(low_val) 
@@ -81,7 +84,7 @@ class Regressor(Model):
                 high_eta = low_eta
                 high_val = low_val
                 low_eta  = high_eta / factor
-                low_val  = self.evaluate_eta( X, Y, low_eta, eval_iters )
+                low_val  = self.evaluate_eta( X, Y, low_eta )
                 low_val  = np.inf if np.isnan( low_val ) else low_val
                 self.__eta = high_eta 
         else:
@@ -89,16 +92,16 @@ class Regressor(Model):
                 low_eta  = high_eta
                 low_val  = high_val
                 high_eta = low_eta * factor
-                high_val = self.evaluate_eta( X, Y, high_eta, eval_iters )
+                high_val = self.evaluate_eta( X, Y, high_eta )
                 high_val = np.inf if np.isnan( high_val ) else high_val
                 self.__eta = low_eta 
 
         self.__eta *= self.__scale
         self.optimizer.set_eta( self.__eta )
 
-        logging.log( level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
+        logging.log( self.log_level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
 
-    def fit( self, X, Y, max_epoch, early_stop=-1, level=logging.INFO ):
+    def fit( self, X, Y, max_epoch, early_stop=-1 ):
         """
         Run algorigthm for up to (max_epoch) on training data X.
         
@@ -111,10 +114,9 @@ class Regressor(Model):
                      Training label.
         max_epoch  : Integer.
         early_stop : Integer.
-        level      : Integer.
         """
 
-        logging.log( level, 
+        logging.log( self.log_level, 
                      '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'Training regressor', '-'*5 ) )
 
         total_time = 0.
@@ -145,14 +147,14 @@ class Regressor(Model):
                     success = False
                     self.__load_param()
                     self.optimizer.reset_func()
-                    logging.log( level,  'the learning process diverged' )
-                    logging.log( level,  'retrain a model with a smaller learning rate: {0}'\
+                    logging.log( self.log_level, 'the learning process diverged' )
+                    logging.log( self.log_level, 'retrain a model with a smaller learning rate: {0}'\
                                 .format( eta ) )
                     break
 
-                logging.log( level,  'epoch: {0:4}, time: {1:>13.1f} sec'\
+                logging.log( self.log_level, 'epoch: {0:4}, time: {1:>13.1f} sec'\
                              .format( e, total_time ) )
-                logging.log( level,  'train_loss: {0:5.4f}'.format( train_loss ) )
+                logging.log( self.log_level, 'train_loss: {0:5.4f}'.format( train_loss ) )
 
                 # early_stopping 
                 if train_loss < 0.999*best_loss:

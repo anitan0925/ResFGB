@@ -1,10 +1,14 @@
 # config : utf-8
 
 from __future__ import print_function, absolute_import, division, unicode_literals
+import sys
 import numpy as np
-import cPickle
 from sklearn.preprocessing import StandardScaler
-from preprocess import max_scale, add_bias, normalize_l2
+from .preprocess import max_scale, add_bias, normalize_l2
+if sys.version_info[0] == 2:
+    import cPickle
+else:
+    import _pickle as cPickle
 
 def load( trainfile_name, testfile_name, 
           split, standardize, normalize, bias, 

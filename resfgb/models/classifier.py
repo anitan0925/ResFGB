@@ -1,20 +1,21 @@
 # coding : utf-8
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import logging
-import time
-from utils import minibatches
-from models.model import Model
+import logging, time
 import numpy as np
+from resfgb.utils import minibatches
+from resfgb.models.model import Model
 
 class Classifier(Model):
-    def __init__( self, eta, scale, minibatch_size, seed ):
+    def __init__( self, eta, scale, minibatch_size, eval_iters, seed, log_level ):
         """
-        eta            : float.
-        scale          : float
-        minibatch_size : integer.
+        eta            : Float.
+        scale          : Float
+        minibatch_size : Integer.
                          Minibatch size to calcurate stochastic gradient.
-        seed           : integer.
+        eval_iters     : Integer.
+                         The number of iterations for evaluating eta.
+        seed           : Integer.
                          Seed for random module.
         """
         super( Classifier, self ).__init__( seed )
@@ -22,6 +23,8 @@ class Classifier(Model):
         self.__eta          = eta
         self.__scale        = scale
         self.minibatch_size = minibatch_size
+        self.eval_iters     = eval_iters
+        self.log_level      = log_level
 
     def evaluate( self, Z, Y ):
         n, nc, loss = 0, 0, 0.
@@ -43,7 +46,7 @@ class Classifier(Model):
         n_correct = np.sum( [ int(py==y) for (py,y) in zip(pred,Y) ] )
         return (loss + reg, n, n_correct )
 
-    def evaluate_eta( self, X, Y, eta, eval_iters ):
+    def evaluate_eta( self, X, Y, eta ):
         self.save_params()
         self.optimizer.set_eta(eta)
 
@@ -51,7 +54,7 @@ class Classifier(Model):
         eval_f = True
         while eval_f:
             for (Xb,Yb) in minibatches( self.minibatch_size, X, Y, shuffle=True ):
-                if n_iters >= eval_iters:
+                if n_iters >= self.eval_iters:
                     eval_f = False
                     break
                 self.optimizer.update_func(Xb,Yb)
@@ -63,15 +66,15 @@ class Classifier(Model):
 
         return val
 
-    def determine_eta( self, X, Y, eval_iters=10000, factor=2., level=logging.INFO ):
+    def determine_eta( self, X, Y, factor=2. ):
         val0     = self.evaluate( X, Y )[0]
 
         low_eta  = self.__eta
-        low_val  = self.evaluate_eta( X, Y, low_eta,  eval_iters )
+        low_val  = self.evaluate_eta( X, Y, low_eta )
         low_val  = np.inf if np.isnan( low_val ) else low_val
 
         high_eta = factor * low_eta
-        high_val = self.evaluate_eta( X, Y, high_eta, eval_iters )
+        high_val = self.evaluate_eta( X, Y, high_eta )
         high_val = np.inf if np.isnan( high_val ) else high_val
 
         decrease_f = True if ( np.isinf(low_val) 
@@ -84,7 +87,7 @@ class Classifier(Model):
                 high_eta = low_eta
                 high_val = low_val
                 low_eta  = high_eta / factor
-                low_val  = self.evaluate_eta( X, Y, low_eta, eval_iters )
+                low_val  = self.evaluate_eta( X, Y, low_eta )
                 low_val  = np.inf if np.isnan( low_val ) else low_val
                 self.__eta = high_eta 
         else:
@@ -92,17 +95,17 @@ class Classifier(Model):
                 low_eta  = high_eta
                 low_val  = high_val
                 high_eta = low_eta * factor
-                high_val = self.evaluate_eta( X, Y, high_eta, eval_iters )
+                high_val = self.evaluate_eta( X, Y, high_eta )
                 high_val = np.inf if np.isnan( high_val ) else high_val
                 self.__eta = low_eta 
 
         self.__eta *= self.__scale
         self.optimizer.set_eta( self.__eta )
 
-        logging.log( level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
+        logging.log( self.log_level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
 
-    def fit( self, X, Y, max_epoch, Xv=None, Yv=None, early_stop=-1,
-             set_best_param=False, level=logging.INFO ):
+    def fit( self, X, Y, max_epoch, Xv=None, Yv=None, early_stop=-1, 
+             use_best_param=False ):
         """
         Run algorigthm for up to (max_eopch) epochs on training data X.
         
@@ -118,10 +121,9 @@ class Classifier(Model):
         Yv         : Numpy array.
                      Validation label.
         early_stop : Integer.
-        level      : Integer.
         """
 
-        logging.log( level, 
+        logging.log( self.log_level, 
                      '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'Training classifier', '-'*5 ) )
 
         best_val_loss = 1e+10
@@ -158,19 +160,19 @@ class Classifier(Model):
                     success = False
                     self.__load_param()
                     self.optimizer.reset_func()
-                    logging.log( level,  'the learning process diverged' )
-                    logging.log( level,  'retrain a model with a smaller learning rate: {0}'\
+                    logging.log( self.log_level, 'the learning process diverged' )
+                    logging.log( self.log_level, 'retrain a model with a smaller learning rate: {0}'\
                                 .format( eta ) )
                     break
 
-                logging.log( level,  'epoch: {0:4}, time: {1:>13.1f} sec'\
+                logging.log( self.log_level, 'epoch: {0:4}, time: {1:>13.1f} sec'\
                              .format( e, total_time ) )
-                logging.log( level,  'train_loss: {0:5.4f}, train_acc: {1:4.3f}'\
+                logging.log( self.log_level, 'train_loss: {0:5.4f}, train_acc: {1:4.3f}'\
                              .format( train_loss, train_acc ) )
 
                 if monitor:
                     val_loss, val_acc = self.evaluate( Xv, Yv )
-                    logging.log( level,  'val_loss  : {0:5.4f}, val_acc  : {1:4.3f}'\
+                    logging.log( self.log_level, 'val_loss  : {0:5.4f}, val_acc  : {1:4.3f}'\
                                  .format( val_loss, val_acc ) )
 
                     val_results.append( ( {'epoch' : e+1},
@@ -191,7 +193,7 @@ class Classifier(Model):
                     success = True
                     break
 
-        if monitor and set_best_param:
+        if monitor and use_best_param:
             if best_epoch < self.epoch:
                 self.set_params( best_param )
 

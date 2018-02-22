@@ -10,7 +10,7 @@ import numpy as np
 import logging
 import theano
 import theano.tensor as T
-import utils
+from resfgb import utils
 
 class AGD( object ):
     """

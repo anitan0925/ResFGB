@@ -1,24 +1,22 @@
 # coding : utf-8
 
 """
-Multilayer perceptron for multidimensional regression.
+Support vector machine for multiclass classificcation problems.
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import sys
-import time
-import logging
+import sys, time, logging
 import numpy as np
 import theano
 import theano.tensor as T
-from utils import minibatches
-import models.layers as L
-from models.regressor import Regressor
-from optimizers import AGD
+from resfgb.utils import minibatches
+from resfgb.models import layers as L
+from resfgb.models.classifier import Classifier
+from resfgb.optimizers import AGD
 
-class MLPBlock( Regressor ):
-    def __init__( self, shape, wr=0, eta=1e-2, momentum=0.9, scale=1.,
-                  minibatch_size=10, seed=99 ):
+class SVM( Classifier ):
+    def __init__( self, shape, wr=0, eta=1e-2, momentum=0.9, gamma=1e+0, 
+                  scale=1., minibatch_size=10, seed=99 ):
         """
         shape          : tuple of integers.
                          Dimension and the number of classes
@@ -30,37 +28,36 @@ class MLPBlock( Regressor ):
         seed           : integer.
                          Seed for random module.
         """
-        super( MLPBlock, self ).__init__( eta, scale, minibatch_size, seed )
+        super( SVM, self ).__init__( eta, scale, minibatch_size, seed )
 
         self.show_param( shape, wr, eta, momentum, scale, minibatch_size, seed )
 
         # input symbols.
         self.Z  = T.matrix( dtype=theano.config.floatX )
-        self.Y  = T.matrix( dtype=theano.config.floatX )
+        self.Y  = T.ivector()
         self.symbols = [ self.Z, self.Y ]
-        
+
         # parameters.
-        self.params = []
-        for l in range( len(shape)-1 ):
-            b = L.zeros_param( shape[l+1] )
-            W = L.linear_param( shape[l], shape[l+1], scale=5e-2 )
-            self.params.extend( [b, W] )
-    
+        bias = False
+        W = L.linear_param( shape[0], shape[1], scale=5e-2 )
+        b = L.zeros_param( shape[1] )
+        if bias:
+            self.params = [b,W]
+        else:
+            self.params = [W]
+
         # functions.
-        Z = self.Z
-        for l in range( 0, len(shape)-1 ):
-            b = self.params[2*l]
-            W = self.params[2*l+1]
-            Z = L.Act( L.FullConnect( Z, [b,W] ), 'relu' )
-        self.output = Z
-        self.loss   = L.Loss( self.output, self.Y, 'squared_error' )
-        
+        A      = L.FullConnect( self.Z, self.params ) # (n,K), K is the number of classes.
+        margin = A[T.arange(self.Y.shape[0]), self.Y][:,None] - A # (n,K)
+        self.loss = T.mean( T.sum( T.nnet.softplus( gamma - margin ), axis=1 ) )
+        self.pred = T.argmax( A, axis=1 )
+
         if wr > 0:
             self.wr = wr
-            val = 0
-            for l in range( 1, len(self.params), 2 ):
-                val += T.sum( self.params[l]**2 )
-            self.reg = 0.5 * wr * val
+            if bias:
+                self.reg = 0.5 * wr * T.sum( self.params[1]**2 )
+            else:
+                self.reg = 0.5 * wr * T.sum( self.params[0]**2 )
         else:
             self.wr = 0
             self.reg = 0
@@ -71,12 +68,12 @@ class MLPBlock( Regressor ):
         self.compile()
 
         # optimizer.
-        self.optimizer = AGD( self, eta=eta, momentum=momentum )
+        self.optimizer  = AGD( self, eta=eta, momentum=momentum )
 
     def show_param( self, shape, wr, eta, momentum, scale,
                     minibatch_size, seed ):
-        logging.info( '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'MLPBlock setting', '-'*5 ) )
-        logging.info( '{0:<5}{1:>31}'.format( 'shape', ' '.join( map(str,shape) ) ) )
+        logging.info( '{0:<5}{1:^26}{2:>5}'.format( '-'*5, 'SVM setting', '-'*5 ) )
+        logging.info( '{0:<15}{1:>21}'.format( 'dim', shape[0] ) )
         logging.info( '{0:<15}{1:>21}'.format( 'n_class', shape[1] ) )
         logging.info( '{0:<15}{1:>21.7}'.format( 'wr', wr ) )
         logging.info( '{0:<15}{1:>21.7f}'.format( 'eta', eta ) )
@@ -86,6 +83,6 @@ class MLPBlock( Regressor ):
         logging.info( '{0:<15}{1:>21}'.format( 'seed', seed ) )
 
     def compile( self ):
-        self.predict   = theano.function( [self.Z], self.output )
+        self.predict   = theano.function( [self.Z], self.pred )
         self.loss_func = theano.function( [self.Z,self.Y], self.loss )
         self.reg_func  = theano.function( [], self.reg )        

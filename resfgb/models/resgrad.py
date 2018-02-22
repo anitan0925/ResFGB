@@ -5,14 +5,13 @@ Learning procedure of residual blocks in ResFGB.
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import sys
-import logging
+import sys, logging
 import numpy as np
 import theano
 import theano.tensor as T
-from utils import minibatches, minibatch_indices
-import models.layers as L
-from models.mlp_block import MLPBlock
+from resfgb.utils import minibatches, minibatch_indices
+from resfgb.models import layers as L
+from resfgb.models.mlp_block import MLPBlock
 
 try:
     from numba import jit, f4
@@ -92,8 +91,7 @@ class ResGrad( object ):
             self.__regressor__.determine_eta( Z, zgrads / znorm[:,None] )
 
         self.__regressor__.fit( Z, zgrads / znorm[:,None], self.__max_epoch__,
-                                early_stop=self.__early_stop__,
-                                level=logging.INFO )
+                                early_stop=self.__early_stop__ )
 
         self.__current_itr__ = len( self.__regressor_params__ )
         self.__regressor_params__.append( self.__regressor__.get_params(real_f=True) )
