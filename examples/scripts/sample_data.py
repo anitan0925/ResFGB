@@ -38,15 +38,15 @@ def save( train_url, train_file, test_url=None, test_file=None ):
         cPickle.dump( [Xt,Yt], fout )
         fout.close()
 
-normalize_f   = False
-bias_f        = True
+normalize   = False
+bias        = True
 
 def get_ijcnn1():
     train_file = './data/ijcnn1.data'
     test_file = './data/ijcnn1.t.data'
     split       = False
     standardize = True
-    scale_f     = False
+    scale       = False
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/ijcnn1.bz2'
@@ -62,7 +62,7 @@ def get_usps():
     test_file = './data/usps.t.data'
     split       = False
     standardize = False
-    scale_f     = True
+    scale       = True
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/usps.bz2'
@@ -78,7 +78,7 @@ def get_letter():
     test_file = './data/letter.t.data'
     split       = False
     standardize = False
-    scale_f     = True
+    scale       = True
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/letter.scale'
@@ -94,7 +94,7 @@ def get_mnist():
     test_file = './data/mnist.t.data'
     split       = False
     standardize = False
-    scale_f     = True
+    scale       = True
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.bz2'
@@ -110,7 +110,7 @@ def get_covtype():
     test_file   = './data/covtype.t.data'
     split       = True
     standardize = True
-    scale_f     = False
+    scale       = False
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
         train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/covtype.scale01.bz2'
