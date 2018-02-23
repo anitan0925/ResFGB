@@ -99,7 +99,7 @@ class Regressor(Model):
         self.__eta *= self.__scale
         self.optimizer.set_eta( self.__eta )
 
-        logging.log( self.log_level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
+        logging.info( 'new_eta (regressor): {0:>15.7f}'.format( self.__eta ) )
 
     def fit( self, X, Y, max_epoch, early_stop=-1 ):
         """

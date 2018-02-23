@@ -54,7 +54,7 @@ def get_ijcnn1():
         save( train_url, train_file, test_url, test_file )
         
     X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
-                                     standardize, normalize, bias )
+                                     standardize, scale, normalize, bias )
     return X, Y, Xt, Yt
         
 def get_usps():
@@ -70,7 +70,7 @@ def get_usps():
         save( train_url, train_file, test_url, test_file )
         
     X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
-                                     standardize, normalize, bias )
+                                     standardize, scale, normalize, bias )
     return X, Y, Xt, Yt
 
 def get_letter():
@@ -86,7 +86,7 @@ def get_letter():
         save( train_url, train_file, test_url, test_file )
         
     X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
-                                     standardize, normalize, bias )
+                                     standardize, scale, normalize, bias )
     return X, Y, Xt, Yt
         
 def get_mnist():
@@ -97,17 +97,17 @@ def get_mnist():
     scale       = True
 
     if not os.path.exists( train_file ) or not os.path.exists( test_file ):
-        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.bz2'
-        test_url  = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.t.bz2'
+        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.scale.bz2'
+        test_url  = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.scale.t.bz2'
         save( train_url, train_file, test_url, test_file )
         
     X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
-                                     standardize, normalize, bias )
+                                     standardize, scale, normalize, bias )
     return X, Y, Xt, Yt
 
 def get_covtype():
     train_file  = './data/covtype.data'
-    test_file   = './data/covtype.t.data'
+    test_file   = None
     split       = True
     standardize = True
     scale       = False
@@ -117,6 +117,6 @@ def get_covtype():
         save( train_url, train_file, None, None )
         
     X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
-                                     standardize, normalize, bias )
+                                     standardize, scale, normalize, bias )
     return X, Y, Xt, Yt
-3
+

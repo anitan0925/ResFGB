@@ -102,7 +102,7 @@ class Classifier(Model):
         self.__eta *= self.__scale
         self.optimizer.set_eta( self.__eta )
 
-        logging.log( self.log_level, 'determined_eta: {0:>20.7f}'.format( self.__eta ) )
+        logging.info( 'new_eta (classifier): {0:>14.7f}'.format( self.__eta ) )
 
     def fit( self, X, Y, max_epoch, Xv=None, Yv=None, early_stop=-1, 
              use_best_param=False ):

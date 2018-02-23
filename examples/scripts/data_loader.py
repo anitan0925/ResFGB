@@ -3,7 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from .preprocess import max_scale, add_bias, normalize_l2
 if sys.version_info[0] == 2:
     import cPickle
@@ -11,7 +11,7 @@ else:
     import _pickle as cPickle
 
 def load( trainfile_name, testfile_name, 
-          split, standardize, normalize, bias, 
+          split, standardize, scale, normalize, bias, 
           train_ratio=0.8, shuffle=True ):
     
     fin = open( trainfile_name, u'rb' )
@@ -49,6 +49,12 @@ def load( trainfile_name, testfile_name,
         X  = scaler.transform( X )
         if Xt is not None:
             Xt = scaler.transform( Xt )
+
+    if scale:
+        scaler = MinMaxScaler()
+        X = scaler.fit_transform(X)
+        if Xt is not None:
+            Xt = scaler.transform(Xt)
 
     if bias:
         X  = add_bias(X)        
