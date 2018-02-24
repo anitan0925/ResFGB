@@ -26,6 +26,7 @@ logging.info( 'train size: {0}, validation size: {1}, test size: {2}'\
 n_class = len( set(Y) | set(Yv) | set(Yt) )
 
 hparams = get_hyperparams( n_data, input_dim, n_class )
+hparams['model_hparams']['bias']         = True
 hparams['model_hparams']['wr']           = 1e-5
 hparams['model_hparams']['max_epoch']    = 30
 hparams['resblock_hparams']['wr']        = 1e-5

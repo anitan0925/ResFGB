@@ -35,6 +35,7 @@ n_class = len( set(Y) | set(Yt) )
 hparams = get_hyperparams( n_data, input_dim, n_class )
 
 if dataset == 'letter':
+    hparams['model_hparams']['bias']          = True
     hparams['model_hparams']['wr']            = 1e-6
     hparams['model_hparams']['max_epoch']     = 100
     hparams['model_hparams']['early_stop']    = -1
@@ -50,6 +51,7 @@ if dataset == 'letter':
     hparams['max_iters'] = 21
 
 elif dataset == 'usps':
+    hparams['model_hparams']['bias']          = True
     hparams['model_hparams']['wr']            = 1e-4
     hparams['model_hparams']['max_epoch']     = 200
     hparams['model_hparams']['early_stop']    = -1
@@ -65,6 +67,7 @@ elif dataset == 'usps':
     hparams['max_iters'] = 1
 
 elif dataset == 'ijcnn1':
+    hparams['model_hparams']['bias']          = True
     hparams['model_hparams']['wr']            = 1e-5
     hparams['model_hparams']['max_epoch']     = 50
     hparams['model_hparams']['early_stop']    = -1
@@ -80,6 +83,7 @@ elif dataset == 'ijcnn1':
     hparams['max_iters'] = 28
 
 elif dataset == 'mnist':
+    hparams['model_hparams']['bias']          = True
     hparams['model_hparams']['wr']            = 1e-6
     hparams['model_hparams']['max_epoch']     = 20
     hparams['model_hparams']['early_stop']    = -1
@@ -95,6 +99,7 @@ elif dataset == 'mnist':
     hparams['max_iters'] = 8
 
 elif dataset == 'covtype':
+    hparams['model_hparams']['bias']          = True
     hparams['model_hparams']['wr']            = 1e-6
     hparams['model_hparams']['max_epoch']     = 10
     hparams['model_hparams']['early_stop']    = -1

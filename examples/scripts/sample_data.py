@@ -39,7 +39,7 @@ def save( train_url, train_file, test_url=None, test_file=None ):
         fout.close()
 
 normalize   = False
-bias        = True
+bias        = False
 
 def get_ijcnn1():
     train_file = './data/ijcnn1.data'

@@ -9,6 +9,7 @@ import logging
 
 def get_hyperparams( n_data, input_dim, n_class ):
     model_hparams = { 'shape'          : (input_dim,n_class),
+                      'bias'           : True,
                       'wr'             : 1/n_data,
                       'eta'            : 1e-2,
                       'momentum'       : 0.9, 

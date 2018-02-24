@@ -15,11 +15,12 @@ from resfgb.models.classifier import Classifier
 from resfgb.optimizers import AGD
 
 class SVM( Classifier ):
-    def __init__( self, shape, wr=0, eta=1e-2, momentum=0.9, gamma=1e+0, 
+    def __init__( self, shape, bias=True, wr=0, eta=1e-2, momentum=0.9, gamma=1e+0, 
                   scale=1., minibatch_size=10, seed=99 ):
         """
         shape          : tuple of integers.
                          Dimension and the number of classes
+        bias           : flag for whether to use bias or not.
         wr             : float.
                          The L2-regularization paremter.
         opt_params     : dictionary.
@@ -38,7 +39,6 @@ class SVM( Classifier ):
         self.symbols = [ self.Z, self.Y ]
 
         # parameters.
-        bias = False
         W = L.linear_param( shape[0], shape[1], scale=5e-2 )
         b = L.zeros_param( shape[1] )
         if bias:
