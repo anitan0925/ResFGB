@@ -10,6 +10,8 @@ else:
     import _pickle as cPickle
 
 def save( train_url, train_file, test_url=None, test_file=None ):
+    if not os.path.exists( './data' ):
+        os.mkdir( './data' )
     test_f = True if test_url is not None and test_file is not None else False
     bz2_f = True if os.path.splitext(train_url)[1] == '.bz2' else False
 
