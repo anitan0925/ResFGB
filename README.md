@@ -1,5 +1,5 @@
 # ResFGB
-This is a Theano(>=1.0.0) implementation of "Functional gradient boosting based on residual network perception".
+This is a Theano(>=1.0.0) implementation of "[Functional gradient boosting based on residual network perception](https://arxiv.org/abs/1802.09031)".
 
 ResFGB is a functional gradient boosting method for learning a resnet-like deep neural network for non-linear classification problems. The model is composed of a linear classifier such as logistic regression and support vector machine, and a feature extraction.
 In each iteration, these components are trained by alternate optimization, that is, a linear classifier is trained to classify obtained samples through a feature extraction and this extraction map is updated by stacking a resnet-type layer to move samples along the direction of increasing the linear separability. We finally obtain a highly non-linear classifier forming a residual network.
