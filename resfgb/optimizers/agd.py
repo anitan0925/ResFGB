@@ -7,10 +7,12 @@ Nesterov's accelerated gradient descent
 from __future__ import print_function, absolute_import, division, unicode_literals
 from collections import OrderedDict
 import numpy as np
-import logging
+from logging import getLogger
 import theano
 import theano.tensor as T
 from resfgb import utils
+
+logger = getLogger(__name__)
 
 
 class AGD(object):
@@ -61,7 +63,7 @@ class AGD(object):
         self.__eta.set_value(utils.numpy_floatX(eta))
 
     def show_eta(self):
-        logging.info('eta: 10.5'.format(self.__eta.get_value()))
+        logger.info('eta: 10.5'.format(self.__eta.get_value()))
 
     def __compile(self):
         params = self.model.get_params()

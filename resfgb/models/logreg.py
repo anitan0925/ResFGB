@@ -7,7 +7,7 @@ Logistic regression for multiclass classificcation problems.
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
 import time
-import logging
+from logging import getLogger, DEBUG, ERROR
 import numpy as np
 import theano
 import theano.tensor as T
@@ -16,11 +16,13 @@ from resfgb.models import layers as L
 from resfgb.models.classifier import Classifier
 from resfgb.optimizers import AGD
 
+logger = getLogger(__name__)
+
 
 class LogReg(Classifier):
     def __init__(self, shape, bias=True, wr=0, eta=1e-2, momentum=0.9, scale=1.,
                  minibatch_size=10, eval_iters=1000, seed=99,
-                 log_level=logging.DEBUG):
+                 log_level=DEBUG):
         """
         shape          : tuple of integers.
                          Dimension and the number of classes
@@ -63,8 +65,8 @@ class LogReg(Classifier):
             else:
                 self.reg = 0.5 * wr * T.sum(self.params[0]**2)
         else:
-            logging.log(logging.ERROR,
-                        'negative regularization parameter is given: {0}'.format(wr))
+            logger.log(ERROR,
+                       'negative regularization parameter is given: {0}'.format(wr))
             sys.exit(-1)
 
         self.sgrad = T.grad(cost=self.loss + self.reg, wrt=self.params)
@@ -77,16 +79,16 @@ class LogReg(Classifier):
 
     def show_param(self, shape, wr, eta, momentum, scale,
                    minibatch_size, eval_iters, seed):
-        logging.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'LogReg setting', '-' * 5))
-        logging.info('{0:<15}{1:>21}'.format('dim', shape[0]))
-        logging.info('{0:<15}{1:>21}'.format('n_class', shape[1]))
-        logging.info('{0:<15}{1:>21.7}'.format('wr', wr))
-        logging.info('{0:<15}{1:>21.7f}'.format('eta', eta))
-        logging.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
-        logging.info('{0:<15}{1:>21.7f}'.format('scale', scale))
-        logging.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
-        logging.info('{0:<15}{1:>21}'.format('eval_iters', eval_iters))
-        logging.info('{0:<15}{1:>21}'.format('seed', seed))
+        logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'LogReg setting', '-' * 5))
+        logger.info('{0:<15}{1:>21}'.format('dim', shape[0]))
+        logger.info('{0:<15}{1:>21}'.format('n_class', shape[1]))
+        logger.info('{0:<15}{1:>21.7}'.format('wr', wr))
+        logger.info('{0:<15}{1:>21.7f}'.format('eta', eta))
+        logger.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
+        logger.info('{0:<15}{1:>21.7f}'.format('scale', scale))
+        logger.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
+        logger.info('{0:<15}{1:>21}'.format('eval_iters', eval_iters))
+        logger.info('{0:<15}{1:>21}'.format('seed', seed))
 
     def compile(self):
         self.predict = theano.function([self.Z], self.pred)

@@ -1,11 +1,13 @@
 # coding : utf-8
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import logging
+from logging import getLogger
 import time
 import numpy as np
 from resfgb.utils import minibatches
 from resfgb.models.model import Model
+
+logger = getLogger(__name__)
 
 
 class Regressor(Model):
@@ -101,7 +103,7 @@ class Regressor(Model):
         self.__eta *= self.__scale
         self.optimizer.set_eta(self.__eta)
 
-        logging.info('new_eta (regressor): {0:>15.7f}'.format(self.__eta))
+        logger.info('new_eta (regressor): {0:>15.7f}'.format(self.__eta))
 
     def fit(self, X, Y, max_epoch, early_stop=-1):
         """
@@ -118,8 +120,8 @@ class Regressor(Model):
         early_stop : Integer.
         """
 
-        logging.log(self.log_level,
-                    '{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'Training regressor', '-' * 5))
+        logger.log(self.log_level,
+                   '{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'Training regressor', '-' * 5))
 
         total_time = 0.
 
@@ -149,14 +151,14 @@ class Regressor(Model):
                     success = False
                     self.__load_param()
                     self.optimizer.reset_func()
-                    logging.log(self.log_level, 'the learning process diverged')
-                    logging.log(self.log_level, 'retrain a model with a smaller learning rate: {0}'
-                                .format(eta))
+                    logger.log(self.log_level, 'the learning process diverged')
+                    logger.log(self.log_level, 'retrain a model with a smaller learning rate: {0}'
+                               .format(eta))
                     break
 
-                logging.log(self.log_level, 'epoch: {0:4}, time: {1:>13.1f} sec'
-                            .format(e, total_time))
-                logging.log(self.log_level, 'train_loss: {0:5.4f}'.format(train_loss))
+                logger.log(self.log_level, 'epoch: {0:4}, time: {1:>13.1f} sec'
+                           .format(e, total_time))
+                logger.log(self.log_level, 'train_loss: {0:5.4f}'.format(train_loss))
 
                 # early_stopping
                 if train_loss < 0.999 * best_loss:

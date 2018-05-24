@@ -7,7 +7,7 @@ Support vector machine for multiclass classificcation problems.
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
 import time
-import logging
+from logging import getLogger
 import numpy as np
 import theano
 import theano.tensor as T
@@ -15,6 +15,8 @@ from resfgb.utils import minibatches
 from resfgb.models import layers as L
 from resfgb.models.classifier import Classifier
 from resfgb.optimizers import AGD
+
+logger = getLogger(__name__)
 
 
 class SVM(Classifier):
@@ -75,15 +77,15 @@ class SVM(Classifier):
 
     def show_param(self, shape, wr, eta, momentum, scale,
                    minibatch_size, seed):
-        logging.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'SVM setting', '-' * 5))
-        logging.info('{0:<15}{1:>21}'.format('dim', shape[0]))
-        logging.info('{0:<15}{1:>21}'.format('n_class', shape[1]))
-        logging.info('{0:<15}{1:>21.7}'.format('wr', wr))
-        logging.info('{0:<15}{1:>21.7f}'.format('eta', eta))
-        logging.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
-        logging.info('{0:<15}{1:>21.7f}'.format('scale', scale))
-        logging.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
-        logging.info('{0:<15}{1:>21}'.format('seed', seed))
+        logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'SVM setting', '-' * 5))
+        logger.info('{0:<15}{1:>21}'.format('dim', shape[0]))
+        logger.info('{0:<15}{1:>21}'.format('n_class', shape[1]))
+        logger.info('{0:<15}{1:>21.7}'.format('wr', wr))
+        logger.info('{0:<15}{1:>21.7f}'.format('eta', eta))
+        logger.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
+        logger.info('{0:<15}{1:>21.7f}'.format('scale', scale))
+        logger.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
+        logger.info('{0:<15}{1:>21}'.format('seed', seed))
 
     def compile(self):
         self.predict = theano.function([self.Z], self.pred)

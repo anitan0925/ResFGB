@@ -6,7 +6,7 @@ Learning procedure of residual blocks in ResFGB.
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
-import logging
+from logging import getLogger, DEBUG
 import numpy as np
 import theano
 import theano.tensor as T
@@ -14,14 +14,17 @@ from resfgb.utils import minibatches, minibatch_indices
 from resfgb.models import layers as L
 from resfgb.models.mlp_block import MLPBlock
 
+logger = getLogger(__name__)
+
 try:
     from numba import jit, f4
 
     @jit(f4[:, :](f4[:, :], f4[:, :]), nopython=True)
     def __dot__(a, b):
         return np.dot(a, b)
-
 except ImportError:
+    logger.warning('fail to use Numba matrix product')
+
     def __dot__(a, b):
         return np.dot(a, b)
 
@@ -63,12 +66,12 @@ class ResGrad(object):
                                               self.__zgrad__)
 
     def show_param(self, eta, tune_eta, max_epoch, early_stop, seed):
-        logging.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'ResGrad setting', '-' * 5))
-        logging.info('{0:<15}{1:>21.7f}'.format('fg_eta', eta))
-        logging.info('{0:<15}{1:>21}'.format('tune_eta', tune_eta))
-        logging.info('{0:<15}{1:>21}'.format('max_epoch', max_epoch))
-        logging.info('{0:<15}{1:>21}'.format('early_stop', early_stop))
-        logging.info('{0:<15}{1:>21}'.format('seed', seed))
+        logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'ResGrad setting', '-' * 5))
+        logger.info('{0:<15}{1:>21.7f}'.format('fg_eta', eta))
+        logger.info('{0:<15}{1:>21}'.format('tune_eta', tune_eta))
+        logger.info('{0:<15}{1:>21}'.format('max_epoch', max_epoch))
+        logger.info('{0:<15}{1:>21}'.format('early_stop', early_stop))
+        logger.info('{0:<15}{1:>21}'.format('seed', seed))
 
     def predict(self, X):
         return self.apply(X)
@@ -86,8 +89,8 @@ class ResGrad(object):
 
         eps = 1e-10
         znorm = np.sqrt(np.mean(zgrads ** 2, axis=1)) + eps
-        logging.log(logging.DEBUG, 'min: {0:12.5f}, max: {1:12.5f}'
-                    .format(np.min(znorm), np.max(znorm)))
+        logger.log(DEBUG, 'min: {0:12.5f}, max: {1:12.5f}'
+                   .format(np.min(znorm), np.max(znorm)))
 
         if self.__tune_eta__ and (n_layers == 0):
             self.__regressor__.determine_eta(Z, zgrads / znorm[:, None])

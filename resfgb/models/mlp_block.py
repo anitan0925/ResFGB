@@ -7,7 +7,7 @@ Multilayer perceptron for multidimensional regression.
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
 import time
-import logging
+from logging import getLogger, DEBUG, ERROR
 import numpy as np
 import theano
 import theano.tensor as T
@@ -16,11 +16,13 @@ from resfgb.models import layers as L
 from resfgb.models.regressor import Regressor
 from resfgb.optimizers import AGD
 
+logger = getLogger(__name__)
+
 
 class MLPBlock(Regressor):
     def __init__(self, shape, wr=0, eta=1e-2, momentum=0.9, scale=1.,
                  minibatch_size=10, eval_iters=1000, seed=99,
-                 log_level=logging.DEBUG):
+                 log_level=DEBUG):
         """
         shape          : tuple of integers.
                          Dimension and the number of classes
@@ -66,8 +68,8 @@ class MLPBlock(Regressor):
                 val += T.sum(self.params[l]**2)
             self.reg = 0.5 * wr * val
         else:
-            logging.log(logging.ERROR,
-                        'negative regularization parameter is given: {0}'.format(wr))
+            logger.log(ERROR,
+                       'negative regularization parameter is given: {0}'.format(wr))
             sys.exit(-1)
 
         self.sgrad = T.grad(cost=self.loss + self.reg, wrt=self.params)
@@ -80,15 +82,15 @@ class MLPBlock(Regressor):
 
     def show_param(self, shape, wr, eta, momentum, scale,
                    minibatch_size, eval_iters, seed):
-        logging.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'MLPBlock setting', '-' * 5))
-        logging.info('{0:<5}{1:>31}'.format('shape', ' '.join(map(str, shape))))
-        logging.info('{0:<15}{1:>21.7}'.format('wr', wr))
-        logging.info('{0:<15}{1:>21.7f}'.format('eta', eta))
-        logging.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
-        logging.info('{0:<15}{1:>21.7f}'.format('scale', scale))
-        logging.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
-        logging.info('{0:<15}{1:>21}'.format('eval_iters', eval_iters))
-        logging.info('{0:<15}{1:>21}'.format('seed', seed))
+        logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'MLPBlock setting', '-' * 5))
+        logger.info('{0:<5}{1:>31}'.format('shape', ' '.join(map(str, shape))))
+        logger.info('{0:<15}{1:>21.7}'.format('wr', wr))
+        logger.info('{0:<15}{1:>21.7f}'.format('eta', eta))
+        logger.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
+        logger.info('{0:<15}{1:>21.7f}'.format('scale', scale))
+        logger.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
+        logger.info('{0:<15}{1:>21}'.format('eval_iters', eval_iters))
+        logger.info('{0:<15}{1:>21}'.format('seed', seed))
 
     def compile(self):
         self.predict = theano.function([self.Z], self.output)

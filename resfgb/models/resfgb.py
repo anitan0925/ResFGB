@@ -5,12 +5,14 @@ ResFGB for multiclass classificcation problems.
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import logging
+from logging import getLogger, ERROR
 import time
 import sys
 import numpy as np
 import theano
 from resfgb.models import LogReg, SVM, ResGrad
+
+logger = getLogger(__name__)
 
 
 class ResFGB(object):
@@ -35,7 +37,7 @@ class ResFGB(object):
         elif model_type == u'smooth_hinge':
             self.__model__ = SVM(seed=seed, **model_hparams)
         else:
-            logging.log(logging.ERROR, 'invalid model_type: {0}'.format(model_type))
+            logger.log(ERROR, 'invalid model_type: {0}'.format(model_type))
             sys.exit(-1)
 
         self.__max_iters__ = max_iters
@@ -44,12 +46,12 @@ class ResFGB(object):
                               seed=seed, proc_batch_size=proc_batch_size)
 
     def show_param(self, model_type, tune_eta, max_epoch, early_stop, max_iters):
-        logging.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'ResFGB setting', '-' * 5))
-        logging.info('{0:<15}{1:>21}'.format('model_type', model_type))
-        logging.info('{0:<15}{1:>21}'.format('tune_eta', tune_eta))
-        logging.info('{0:<15}{1:>21}'.format('max_epoch', max_epoch))
-        logging.info('{0:<15}{1:>21}'.format('early_stop', early_stop))
-        logging.info('{0:<15}{1:>21}'.format('max_iters', max_iters))
+        logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'ResFGB setting', '-' * 5))
+        logger.info('{0:<15}{1:>21}'.format('model_type', model_type))
+        logger.info('{0:<15}{1:>21}'.format('tune_eta', tune_eta))
+        logger.info('{0:<15}{1:>21}'.format('max_epoch', max_epoch))
+        logger.info('{0:<15}{1:>21}'.format('early_stop', early_stop))
+        logger.info('{0:<15}{1:>21}'.format('max_iters', max_iters))
 
     def evaluate(self, X, Y, sample_f=True):
         if sample_f:
@@ -62,7 +64,7 @@ class ResFGB(object):
 
     def fit(self, X, Y, Xv=None, Yv=None, use_best_iter=False):
 
-        logging.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'Training ResFGB', '-' * 5))
+        logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'Training ResFGB', '-' * 5))
 
         best_val_acc = 0.
         best_val_loss = 1e+10
@@ -98,15 +100,15 @@ class ResFGB(object):
             total_time += etime - stime
 
             train_loss, train_acc = self.evaluate(Z, Y, sample_f=False)
-            logging.info('layer: {0:4}, time:{1:>14.1f} sec'
-                         .format(n_iter, total_time))
-            logging.info('train_loss: {0:5.4f}, train_acc: {1:4.3f}'
-                         .format(train_loss, train_acc))
+            logger.info('layer: {0:4}, time:{1:>14.1f} sec'
+                        .format(n_iter, total_time))
+            logger.info('train_loss: {0:5.4f}, train_acc: {1:4.3f}'
+                        .format(train_loss, train_acc))
 
             if monitor:
                 val_loss, val_acc = self.evaluate(Zv, Yv, sample_f=False)
-                logging.info('val_loss: {0:8.4f}, val_acc: {1:7.3f}'
-                             .format(val_loss, val_acc))
+                logger.info('val_loss: {0:8.4f}, val_acc: {1:7.3f}'
+                            .format(val_loss, val_acc))
 
                 if val_acc > best_val_acc:
                     best_n_layers = n_iter
@@ -135,15 +137,15 @@ class ResFGB(object):
         total_time += etime - stime
 
         train_loss, train_acc = self.evaluate(Z, Y, sample_f=False)
-        logging.info('layer: {0:4}, time:{1:>14.1f} sec'
-                     .format(self.__max_iters__, total_time))
-        logging.info('train_loss: {0:5.4f}, train_acc: {1:4.3f}'
-                     .format(train_loss, train_acc))
+        logger.info('layer: {0:4}, time:{1:>14.1f} sec'
+                    .format(self.__max_iters__, total_time))
+        logger.info('train_loss: {0:5.4f}, train_acc: {1:4.3f}'
+                    .format(train_loss, train_acc))
 
         if monitor:
             val_loss, val_acc = self.evaluate(Zv, Yv, sample_f=False)
-            logging.info('val_loss: {0:8.4f}, val_acc: {1:7.3f}'
-                         .format(val_loss, val_acc))
+            logger.info('val_loss: {0:8.4f}, val_acc: {1:7.3f}'
+                        .format(val_loss, val_acc))
 
             if val_acc > best_val_acc:
                 best_n_layers = self.__max_iters__

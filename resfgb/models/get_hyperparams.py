@@ -5,7 +5,6 @@ Get default hyper-parameters of ResFGB.
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
-import logging
 
 
 def get_hyperparams(n_data, input_dim, n_class):
