@@ -7,12 +7,15 @@ Nesterov's accelerated gradient descent
 from __future__ import print_function, absolute_import, division, unicode_literals
 from collections import OrderedDict
 import numpy as np
-import logging
+from logging import getLogger
 import theano
 import theano.tensor as T
 from resfgb import utils
 
-class AGD( object ):
+logger = getLogger(__name__)
+
+
+class AGD(object):
     """
     Nesterov's accelerated gradient descent with constant momentum and learning_rate 
     under minibath setting.
@@ -21,7 +24,7 @@ class AGD( object ):
 
         v_{t+1} = mu*v_{t} - eta*g(x_{t} + mu*v_{t}),
         x_{t+1} = x_{t} + v_{t+1},
-    
+
     where g is the stochastic gradient. 
     Let p_{t} = x_{t} + mu*v_{t}, then we have see that the above update 
     is equivalent to
@@ -36,7 +39,7 @@ class AGD( object ):
     because it is expected that v_T ~ 0 as optimization proceeds (T->\infty).
     """
 
-    def __init__( self, model, eta=1e-2, momentum=0.9 ):
+    def __init__(self, model, eta=1e-2, momentum=0.9):
         """
         Initialize Nesterov's accelerated gradient descent.
 
@@ -48,47 +51,48 @@ class AGD( object ):
         momentum       : Nesterov's momentum.
         """
 
-        self.model            = model
-        self.__eta            = theano.shared( utils.numpy_floatX(eta) )
-        self.__mu             = momentum
+        self.model = model
+        self.__eta = theano.shared(utils.numpy_floatX(eta))
+        self.__mu = momentum
         self.__compile()
 
-    def get_eta( self ):
+    def get_eta(self):
         return self.__eta.get_value()
 
-    def set_eta( self, eta ):
-        self.__eta.set_value( utils.numpy_floatX(eta) )
+    def set_eta(self, eta):
+        self.__eta.set_value(utils.numpy_floatX(eta))
 
-    def show_eta( self ):
-        logging.info( 'eta: 10.5'.format( self.__eta.get_value() ) )
+    def show_eta(self):
+        logger.info('eta: 10.5'.format(self.__eta.get_value()))
 
-    def __compile( self ):
+    def __compile(self):
         params = self.model.get_params()
         sgrads = self.model.gradients()
 
         # Shared variables for velocities.
-        ves = [ theano.shared( 
-            np.zeros( p.get_value().shape, dtype=theano.config.floatX ) ) 
-                for p in params ]
+        ves = [theano.shared(
+            np.zeros(p.get_value().shape, dtype=theano.config.floatX))
+            for p in params]
 
         # Stochastic gradient.
         updates = OrderedDict()
 
         # Update velocities.
-        new_ves = map( lambda (ve, sg) : self.__mu * ve - self.__eta * sg,
-                       zip( ves, sgrads ) )
-        updates.update( zip( ves, new_ves ) )       
+        new_ves = []
+        for ve, sg in zip(ves, sgrads):
+            new_ves.append(self.__mu * ve - self.__eta * sg)
+        updates.update(zip(ves, new_ves))
 
         # AGD update.
-        new_params = [ p - self.__eta * sg + self.__mu * new_ve 
-                       for (p, sg, new_ve) 
-                       in zip( params, sgrads, new_ves ) ]
+        new_params = [p - self.__eta * sg + self.__mu * new_ve
+                      for (p, sg, new_ve)
+                      in zip(params, sgrads, new_ves)]
 
-        updates.update( zip( params, new_params ) )
-      
-        self.update_func = theano.function( inputs  = self.model.get_symbols(), 
-                                            updates = updates )
-                                                  
+        updates.update(zip(params, new_params))
+
+        self.update_func = theano.function(inputs=self.model.get_symbols(),
+                                           updates=updates)
+
         # Reset function.
-        updates = OrderedDict( [ ( ve, 0.*ve ) for ve in ves ] )
-        self.reset_func = theano.function( inputs=[], updates=updates ) 
+        updates = OrderedDict([(ve, 0. * ve) for ve in ves])
+        self.reset_func = theano.function(inputs=[], updates=updates)
