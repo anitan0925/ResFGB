@@ -160,7 +160,7 @@ class Classifier(Model):
                     eta = self.optimizer.get_eta() / 2.
                     self.optimizer.set_eta(eta)
                     success = False
-                    self.__load_param()
+                    self.load_params()
                     self.optimizer.reset_func()
                     logging.log(self.log_level, 'the learning process diverged')
                     logging.log(self.log_level, 'retrain a model with a smaller learning rate: {0}'
