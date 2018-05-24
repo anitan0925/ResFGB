@@ -6,4 +6,3 @@ from .svm import SVM
 from .resgrad import ResGrad
 from .resfgb import ResFGB
 from . import layers
-
