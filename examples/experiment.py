@@ -10,7 +10,7 @@ dataset = sys.argv[1]
 logging.basicConfig( format='%(message)s', level=logging.INFO )
 
 # Set seed
-seed = 123
+seed = int(sys.argv[2])
 np.random.seed( seed )
 
 # Get data

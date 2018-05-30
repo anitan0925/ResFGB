@@ -16,7 +16,7 @@ logger = getLogger(__name__)
 
 
 class ResFGB(object):
-    def __init__(self, model_type=u'logreg', model_hparams={}, resblock_hparams={},
+    def __init__(self, model_type='logistic', model_hparams={}, resblock_hparams={},
                  fg_eta=None, max_iters=10, seed=99, proc_batch_size=10000):
 
         self.show_param(model_type,
@@ -32,9 +32,9 @@ class ResFGB(object):
         del model_hparams['max_epoch']
         del model_hparams['early_stop']
 
-        if model_type == u'logistic':
+        if model_type == 'logistic':
             self.__model__ = LogReg(seed=seed, **model_hparams)
-        elif model_type == u'smooth_hinge':
+        elif model_type == 'smooth_hinge':
             self.__model__ = SVM(seed=seed, **model_hparams)
         else:
             logger.log(ERROR, 'invalid model_type: {0}'.format(model_type))
@@ -118,7 +118,14 @@ class ResFGB(object):
 
             #----- compute weight matrix -----
             stime = time.time()
-            self.__fg__.compute_weight(Z, Y)
+            if False: #subsample
+                indices = range(Z.shape[0])
+                np.random.shuffle(indices)
+                n_samples = int( 0.5 * len(indices) )
+                self.__fg__.compute_weight(Z[indices[:n_samples]],
+                                           Y[indices[:n_samples]])
+            else:
+                self.__fg__.compute_weight(Z, Y)
             etime = time.time()
             total_time += etime - stime
 

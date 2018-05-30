@@ -108,6 +108,8 @@ class Classifier(Model):
 
         logger.info('new_eta (classifier): {0:>14.7f}'.format(self.__eta))
 
+        return self.__eta
+
     def fit(self, X, Y, max_epoch, Xv=None, Yv=None, early_stop=-1,
             use_best_param=False):
         """
@@ -198,7 +200,7 @@ class Classifier(Model):
                     break
 
         if monitor and use_best_param:
-            if best_epoch < self.epoch:
+            if best_epoch < max_epoch:
                 self.set_params(best_param)
 
         return val_results

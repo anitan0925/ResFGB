@@ -44,9 +44,17 @@ class ResGrad(object):
         self.__tune_eta__ = resblock_hparams['tune_eta']
         self.__max_epoch__ = resblock_hparams['max_epoch']
         self.__early_stop__ = resblock_hparams['early_stop']
+        self.__momentum__ = resblock_hparams['resblock_momentum']
+        if self.__momentum__ > 0:
+            self.__nesterov__ = True
+        else:
+            self.__nesterov__ = False
+        self.__velocity__ = None
+        
         del resblock_hparams['tune_eta']
         del resblock_hparams['max_epoch']
         del resblock_hparams['early_stop']
+        del resblock_hparams['resblock_momentum']
 
         """
         Large-data will be divided and processed by the batch_size just for the computational efficiency.
@@ -128,9 +136,19 @@ class ResGrad(object):
             self.solve_gradient(Z, zgrads, n_layers)
             Zl = self.approximate_gradient(Z, n_layers)
 
-            # Zl: (n,emb_dim), zgrads: (n,d)
-            # Wl: (emb_dim,d)
-            Wl = __dot__(Zl.T, zgrads)
+            if self.__nesterov__ and self.__velocity__ is None:
+                self.__velocity__ = np.zeros( shape=Z.shape ) 
+
+            if self.__nesterov__:
+                self.__velocity__ = self.__momentum__ * self.__velocity__ \
+                                    + self.__eta__ * zgrads
+
+                Wl = __dot__(Zl.T, self.__eta__ * zgrads
+                             + self.__momentum__ * self.__velocity__)
+            else:
+                # Zl: (n,emb_dim), zgrads: (n,d)
+                # Wl: (emb_dim,d)
+                Wl = __dot__(Zl.T, zgrads)
         else:
             Wl = np.zeros(shape=(d, d), dtype=theano.config.floatX)
             zgrads = []
@@ -152,16 +170,24 @@ class ResGrad(object):
                 zgradb = zgrads[start:end]
                 Zlb = self.approximate_gradient(Zb, n_layers)
 
-                # (batch,d)
-                b = Zb.shape[0]
-
-                # Zlb: (n,emb_dim), zgradb: (n,d)
-                # Wl: (emb_dim,d)
-                Wl += __dot__(Zlb.T, zgradb)
+                if self.__nesterov__:
+                    if self.__velocity__ is None:
+                        self.__velocity__ = [ np.zeros( shape=Zb.shape ) ]
+                    elif i+1 > len( self.__velocity__ ):
+                        self.__velocity__.append( np.zeros( shape=Zb.shape ) )
+             
+                if self.__nesterov__:
+                    self.__velocity__[i] = self.__momentum__ * self.__velocity__[i] \
+                                           + self.__eta__ * zgradb
+                    # (emb_dim,d)
+                    Wl += __dot__(Zlb.T, self.__eta__ * zgradb
+                                   + self.__momentum__ * self.__velocity__[i])
+                else:
+                    Wl += __dot__(Zlb.T, self.__eta__ * zgradb)
 
         self.params.append(Wl)
-        self.params[-1] *= self.__eta__
 
+        
     def apply(self, Z_, lfrom=0):
         """
          Perform functional gradient descent.

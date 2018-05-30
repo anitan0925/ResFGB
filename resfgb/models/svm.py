@@ -7,7 +7,7 @@ Support vector machine for multiclass classificcation problems.
 from __future__ import print_function, absolute_import, division, unicode_literals
 import sys
 import time
-from logging import getLogger
+from logging import getLogger, DEBUG, ERROR
 import numpy as np
 import theano
 import theano.tensor as T
@@ -21,7 +21,8 @@ logger = getLogger(__name__)
 
 class SVM(Classifier):
     def __init__(self, shape, bias=True, wr=0, eta=1e-2, momentum=0.9, gamma=1e+0,
-                 scale=1., minibatch_size=10, seed=99):
+                 scale=1., minibatch_size=10, eval_iters=1000, seed=99,
+                 log_level=DEBUG):
         """
         shape          : tuple of integers.
                          Dimension and the number of classes
@@ -34,9 +35,11 @@ class SVM(Classifier):
         seed           : integer.
                          Seed for random module.
         """
-        super(SVM, self).__init__(eta, scale, minibatch_size, seed)
+        super(SVM, self).__init__(eta, scale, minibatch_size, eval_iters, seed,
+                                  log_level)
 
-        self.show_param(shape, wr, eta, momentum, scale, minibatch_size, seed)
+        self.show_param(shape, wr, eta, momentum, scale, minibatch_size,
+                        eval_iters, seed)        
 
         # input symbols.
         self.Z = T.matrix(dtype=theano.config.floatX)
@@ -55,6 +58,7 @@ class SVM(Classifier):
         A = L.FullConnect(self.Z, self.params)  # (n,K), K is the number of classes.
         margin = A[T.arange(self.Y.shape[0]), self.Y][:, None] - A  # (n,K)
         self.loss = T.mean(T.sum(T.nnet.softplus(gamma - margin), axis=1))
+        # self.loss = T.mean(T.sum(T.maximum(gamma - margin, 0.), axis=1))
         self.pred = T.argmax(A, axis=1)
 
         if wr > 0:
@@ -64,8 +68,9 @@ class SVM(Classifier):
             else:
                 self.reg = 0.5 * wr * T.sum(self.params[0]**2)
         else:
-            self.wr = 0
-            self.reg = 0
+            logger.log(ERROR,
+                       'negative regularization parameter is given: {0}'.format(wr))
+            sys.exit(-1)            
 
         self.sgrad = T.grad(cost=self.loss + self.reg, wrt=self.params)
 
@@ -75,8 +80,8 @@ class SVM(Classifier):
         # optimizer.
         self.optimizer = AGD(self, eta=eta, momentum=momentum)
 
-    def show_param(self, shape, wr, eta, momentum, scale,
-                   minibatch_size, seed):
+    def show_param(self, shape, wr, eta, momentum, scale, minibatch_size,
+                   eval_iters, seed):
         logger.info('{0:<5}{1:^26}{2:>5}'.format('-' * 5, 'SVM setting', '-' * 5))
         logger.info('{0:<15}{1:>21}'.format('dim', shape[0]))
         logger.info('{0:<15}{1:>21}'.format('n_class', shape[1]))
@@ -85,6 +90,7 @@ class SVM(Classifier):
         logger.info('{0:<15}{1:>21.7f}'.format('momentum', momentum))
         logger.info('{0:<15}{1:>21.7f}'.format('scale', scale))
         logger.info('{0:<15}{1:>21}'.format('minibatch_size', minibatch_size))
+        logger.info('{0:<15}{1:>21}'.format('eval_iters', eval_iters))        
         logger.info('{0:<15}{1:>21}'.format('seed', seed))
 
     def compile(self):

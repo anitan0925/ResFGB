@@ -57,9 +57,14 @@ class MLPBlock(Regressor):
         for l in range(0, len(shape) - 1):
             b = self.params[2 * l]
             W = self.params[2 * l + 1]
-            Z = L.Act(L.FullConnect(Z, [b, W]), 'relu')
+            if l == len(shape) - 2:
+                Z = L.Act(L.FullConnect(Z, [b, W]), 'tanh')
+            else:
+                Z = L.Act(L.FullConnect(Z, [b, W]), 'relu')                
         self.output = Z
-        self.loss = L.Loss(self.output, self.Y, 'squared_error')
+        self.loss = L.Loss(self.output, self.Y, 'huber')
+        # self.loss = L.Loss(self.output, self.Y, 'abs')
+        # self.loss = L.Loss(self.output, self.Y, 'squared_error')
 
         if wr > 0:
             self.wr = wr

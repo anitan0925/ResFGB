@@ -9,7 +9,6 @@ from theano.tensor.signal import pool
 
 relu_alpha = 0.
 
-
 def uniform_param(shape, scale=5e-2):
     return theano.shared(
         np.random.uniform(size=shape, low=-scale, high=scale).astype(
@@ -147,19 +146,23 @@ def FullConnect_nd(X, params):
 
 
 def Loss(X, Y, ltype=u'cross_entropy'):
-    if ltype == u'cross_entropy':
+    if ltype == 'cross_entropy':
         loss = -T.mean(T.log(X)[T.arange(Y.shape[0]), Y])
         return loss
-    elif ltype == u'squared_error':
+    elif ltype == 'squared_error':
         loss = T.mean((X - Y)**2)
         return loss
-    elif ltype == u'huber':
+    elif ltype == 'huber':
         delta = 1.
         diff = X - Y
         a = 0.5 * (diff**2)
-        b = delta * (abs(diff) - delta / 2.)
-        loss = T.mean(T.switch(abs(diff) <= delta, a, b))
+        b = delta * (T.abs_(diff) - delta / 2.)
+        loss = T.mean(T.switch(T.abs_(diff) <= delta, a, b))
         return loss
+    elif ltype == 'abs':
+        diff = T.abs_(X - Y)
+        loss = T.mean(diff)
+        return loss        
     else:
         sys.exit(-1)
 

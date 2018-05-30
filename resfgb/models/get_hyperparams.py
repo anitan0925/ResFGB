@@ -28,6 +28,7 @@ def get_hyperparams(n_data, input_dim, n_class):
                         'scale': 1.0,
                         'max_epoch': 50,
                         'tune_eta': True,
+                        'resblock_momentum' : 0.9,
                         'eval_iters': 1000,
                         'early_stop': 10}
 
