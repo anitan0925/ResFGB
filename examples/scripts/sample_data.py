@@ -122,3 +122,18 @@ def get_covtype():
                                      standardize, scale, normalize, bias )
     return X, Y, Xt, Yt
 
+def get_susy():
+    train_file  = './data/susy.data'
+    test_file   = None
+    split       = True
+    standardize = True
+    scale       = False
+
+    if not os.path.exists( train_file ):
+        train_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/SUSY.bz2'
+        save( train_url, train_file, None, None )
+        
+    X, Y, Xt, Yt = data_loader.load( train_file, test_file, split, 
+                                     standardize, scale, normalize, bias )
+    return X, Y, Xt, Yt
+

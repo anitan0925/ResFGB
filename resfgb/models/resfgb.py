@@ -17,7 +17,7 @@ logger = getLogger(__name__)
 
 class ResFGB(object):
     def __init__(self, model_type='logistic', model_hparams={}, resblock_hparams={},
-                 fg_eta=None, max_iters=10, seed=99, proc_batch_size=10000):
+                 fg_eta=None, max_iters=10, seed=99, wr=0., proc_batch_size=10000):
 
         self.show_param(model_type,
                         model_hparams['tune_eta'],
@@ -40,6 +40,7 @@ class ResFGB(object):
             logger.log(ERROR, 'invalid model_type: {0}'.format(model_type))
             sys.exit(-1)
 
+        self.__wr__ = wr
         self.__max_iters__ = max_iters
         self.__fg__ = ResGrad(self.__model__, eta=fg_eta,
                               resblock_hparams=resblock_hparams,
@@ -53,12 +54,12 @@ class ResFGB(object):
         logger.info('{0:<15}{1:>21}'.format('early_stop', early_stop))
         logger.info('{0:<15}{1:>21}'.format('max_iters', max_iters))
 
-    def evaluate(self, X, Y, sample_f=True):
+    def evaluate(self, Z, Y, sample_f=True):
         if sample_f:
-            Z = self.__fg__.predict(X)
+            Z = self.__fg__.predict(Z, Z, self.__wr__)
             loss, acc = self.__model__.evaluate(Z, Y)
         else:
-            loss, acc = self.__model__.evaluate(X, Y)
+            loss, acc = self.__model__.evaluate(Z, Y)
 
         return loss, acc
 
@@ -85,9 +86,9 @@ class ResFGB(object):
             #----- apply functional gradient -----
             stime = time.time()
             if n_iter >= 1:
-                Z = self.__fg__.apply(Z, lfrom=n_iter - 1)
+                Z = self.__fg__.apply(X, Z, self.__wr__, lfrom=n_iter - 1)
                 if monitor:
-                    Zv = self.__fg__.apply(Zv, lfrom=n_iter - 1)
+                    Zv = self.__fg__.apply(Xv, Zv, self.__wr__, lfrom=n_iter - 1)
 
             #----- fit and evaluate -----
             self.__model__.optimizer.reset_func()
@@ -122,19 +123,20 @@ class ResFGB(object):
                 indices = range(Z.shape[0])
                 np.random.shuffle(indices)
                 n_samples = int( 0.5 * len(indices) )
-                self.__fg__.compute_weight(Z[indices[:n_samples]],
+                self.__fg__.compute_weight(X[indices[:n_samples]],
+                                           Z[indices[:n_samples]],
                                            Y[indices[:n_samples]])
             else:
-                self.__fg__.compute_weight(Z, Y)
+                self.__fg__.compute_weight(X, Z, Y)
             etime = time.time()
             total_time += etime - stime
 
         #----- apply functional gradient -----
         stime = time.time()
         if self.__max_iters__ >= 1:
-            Z = self.__fg__.apply(Z, lfrom=self.__max_iters__ - 1)
+            Z = self.__fg__.apply(X, Z, self.__wr__, lfrom=self.__max_iters__ - 1)
             if monitor:
-                Zv = self.__fg__.apply(Zv, lfrom=self.__max_iters__ - 1)
+                Zv = self.__fg__.apply(Xv, Zv, self.__wr__, lfrom=self.__max_iters__ - 1)
 
         #----- fit and evaluate -----
         self.__model__.optimizer.reset_func()

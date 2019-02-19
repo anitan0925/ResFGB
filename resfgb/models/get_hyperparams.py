@@ -10,7 +10,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 def get_hyperparams(n_data, input_dim, n_class):
     model_hparams = {'shape': (input_dim, n_class),
                      'bias': True,
-                     'wr': 1 / n_data,
+                     'wr': 1. / n_data,
                      'eta': 1e-2,
                      'momentum': 0.9,
                      'minibatch_size': 100,
@@ -21,14 +21,15 @@ def get_hyperparams(n_data, input_dim, n_class):
                      'early_stop': 10}
 
     resblock_hparams = {'shape': (input_dim, 100, 100, 100, 100, input_dim),
-                        'wr': 1 / n_data,
+                        'wr': 1. / n_data,
                         'eta': 1e-2,
                         'momentum': 0.9,
                         'minibatch_size': 100,
                         'scale': 1.0,
                         'max_epoch': 50,
                         'tune_eta': True,
-                        'resblock_momentum' : 0.9,
+                        # 'resblock_momentum' : 0.9,
+                        'resblock_momentum' : -1,
                         'eval_iters': 1000,
                         'early_stop': 10}
 
@@ -37,6 +38,7 @@ def get_hyperparams(n_data, input_dim, n_class):
                'resblock_hparams': resblock_hparams,
                'fg_eta': 1e-1,
                'max_iters': 30,
+               'wr' : 1. / n_data,
                'seed': 1}
 
     return hparams
