@@ -163,9 +163,12 @@ class MLPBlock2(Regressor2):
             else:
                 Z = L.Act(L.FullConnect(Z, [b, W]), 'relu') 
                 Z2 = L.Act(L.FullConnect(Z2, [b2, W2]), 'relu' )
-                
+
+        self.output_1 = Z  # receive the output of previous layer.
+        self.output_2 = Z2 # receive input data directly.
         self.output = Z + Z2
-        self.loss = L.Loss(self.output, self.Y, 'huber')
+        self.loss = L.Loss(self.output, self.Y, 'inner_prod')
+        # self.loss = L.Loss(self.output, self.Y, 'huber')
         # self.loss = L.Loss(self.output, self.Y, 'abs')
         # self.loss = L.Loss(self.output, self.Y, 'squared_error')
 
@@ -202,5 +205,7 @@ class MLPBlock2(Regressor2):
 
     def compile(self):
         self.predict = theano.function([self.X, self.Z], self.output)
+        self.predict_1 = theano.function([self.Z], self.output_1)
+        self.predict_2 = theano.function([self.X], self.output_2)        
         self.loss_func = theano.function([self.X, self.Z, self.Y], self.loss)
         self.reg_func = theano.function([], self.reg)

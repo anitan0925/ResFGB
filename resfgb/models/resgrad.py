@@ -84,8 +84,8 @@ class ResGrad(object):
         logger.info('{0:<15}{1:>21}'.format('early_stop', early_stop))
         logger.info('{0:<15}{1:>21}'.format('seed', seed))
 
-    def predict(self, X, Z, wr):
-        return self.apply(X, Z, wr)
+    def predict(self, X, Z):
+        return self.apply(X, Z)
 
     def set_regressor_params(self, l):
         if self.__current_itr__ == l or l < 0:
@@ -98,23 +98,45 @@ class ResGrad(object):
         self.set_regressor_params(n_layers - 1)
         self.__regressor__.optimizer.reset_func()
 
-        eps = 1e-10
-        znorm = np.sqrt(np.mean(zgrads ** 2, axis=1)) + eps
-        logger.log(DEBUG, 'min: {0:12.5f}, max: {1:12.5f}'
-                   .format(np.min(znorm), np.max(znorm)))
+        __scale__ = True
+        scale = 1./np.mean( np.sqrt( np.sum(zgrads ** 2, axis=1) ) ) if __scale__ else 1
+        
+        logger.log(DEBUG, 'min: {0:12.5f}'.format(scale))
 
         if self.__tune_eta__ and (n_layers == 0):
-            self.__regressor__.determine_eta(X, Z, zgrads / znorm[:, None])
+            self.__regressor__.determine_eta(X, Z, scale * zgrads )
 
-        self.__regressor__.fit(X, Z, zgrads / znorm[:, None], self.__max_epoch__,
+        self.__regressor__.fit(X, Z, scale * zgrads, self.__max_epoch__,
                                early_stop=self.__early_stop__)
 
         self.__current_itr__ = len(self.__regressor_params__)
         self.__regressor_params__.append(self.__regressor__.get_params(real_f=True))
 
+    # def solve_gradient_old(self, X, Z, zgrads, n_layers):
+    #     self.set_regressor_params(n_layers - 1)
+    #     self.__regressor__.optimizer.reset_func()
+
+    #     eps = 1e-10
+    #     znorm = np.sqrt(np.mean(zgrads ** 2, axis=1)) + eps
+    #     logger.log(DEBUG, 'min: {0:12.5f}, max: {1:12.5f}'
+    #                .format(np.min(znorm), np.max(znorm)))
+
+    #     if self.__tune_eta__ and (n_layers == 0):
+    #         self.__regressor__.determine_eta(X, Z, zgrads / znorm[:, None])
+
+    #     self.__regressor__.fit(X, Z, zgrads / znorm[:, None], self.__max_epoch__,
+    #                            early_stop=self.__early_stop__)
+
+    #     self.__current_itr__ = len(self.__regressor_params__)
+    #     self.__regressor_params__.append(self.__regressor__.get_params(real_f=True))        
+
     def approximate_gradient(self, X, Z, l):
         self.set_regressor_params(l)
-        return self.__regressor__.predict(X,Z)
+        return self.__regressor__.predict_1(Z), self.__regressor__.predict_2(X)
+
+    # def approximate_gradient_old(self, X, Z, l):
+    #     self.set_regressor_params(l)
+    #     return self.__regressor__.predict(X,Z)
 
     def compute_weight(self, X, Z, Y):
         """
@@ -130,36 +152,46 @@ class ResGrad(object):
         n, d = Z.shape
         n_layers = len(self.params)
 
-        fullbatch_mode = True if n <= self.__batch_size__ or self.__batch_size__ is None else False
+        # fullbatch_mode = True if n <= self.__batch_size__ or self.__batch_size__ is None else False
+        fullbatch_mode = True #@@@@@ tmp
 
         if fullbatch_mode:
             # (n, d)
             zgrads = self.__zgrad_func__(Z, Y)
             fgnorm = np.sqrt(np.mean( np.sum(zgrads**2, axis=1) ))            
-            if self.__FW__:
-                eta = 1./fgnorm
-            else:
-                eta = self.__eta__ * fgnorm
             
             self.solve_gradient(X, Z, zgrads, n_layers)
-            Zl = self.approximate_gradient(X, Z, n_layers)
-
-            eta = self.__current_itr__ + 1
-
-            if self.__nesterov__ and self.__velocity__ is None:
-                self.__velocity__ = np.zeros( shape=Z.shape ) 
+            e2, e1 = self.approximate_gradient(X, Z, n_layers)
 
             if self.__nesterov__:
-                self.__velocity__ = self.__momentum__ * self.__velocity__ \
-                                    + eta * zgrads
+                print("nesterov-mode is invalid now")
+                sys.exit(-1)
+            # if self.__nesterov__ and self.__velocity__ is None:
+            #     self.__velocity__ = np.zeros( shape=Z.shape ) 
 
-                Wl = __dot__(Zl.T, eta * zgrads
-                             + self.__momentum__ * self.__velocity__)
+            # if self.__nesterov__:
+            #     self.__velocity__ = self.__momentum__ * self.__velocity__ \
+            #                         + eta * zgrads
+
+            #     Wl = __dot__(Zl.T, eta * zgrads
+            #                  + self.__momentum__ * self.__velocity__)
             else:
-                # Zl: (n,emb_dim), zgrads: (n,d)
-                # Wl: (emb_dim,d)
-                Wl = __dot__(Zl.T, eta * zgrads)
+                # e1, e2: (n,emb_dim), zgrads: (n,d)
+                # A1, A2: (emb_dim,d)
+                A1 = - __dot__(e1.T, zgrads) / n
+                A2 = - __dot__(e2.T, zgrads) / n
+
+                # Calculate Z1
+                # T1: (n,d)
+                T1 = __dot__(e1, -A1)
+                Z1 = np.sqrt( np.trace( __dot__(zgrads, T1.T) ) / n )
+
+                A1 /= Z1
+                A2 /= Z1
         else:
+            print("only fullbach_mode is available.")
+            sys.exit(-1) # temp
+            
             Wl = np.zeros(shape=(d, d), dtype=theano.config.floatX)
             zgrads = []
             for i, start in enumerate(range(0, n, self.__batch_size__)):
@@ -201,10 +233,98 @@ class ResGrad(object):
                 else:
                     Wl += __dot__(Zlb.T, eta * zgradb)
 
-        self.params.append(Wl)
+        self.params.append( (A1,A2) )
         # print("eta: %f, fgnorm: %f" % (eta, fgnorm))
+
+    # def compute_weight_old(self, X, Z, Y):
+    #     """
+    #     Compute the weight matrix for functional gradient method.
+
+    #     Arguments
+    #     ---------
+    #     Z : Numpy array. 
+    #         Represents data.
+    #     Y : Numpy array.
+    #         Represents label.
+    #     """
+    #     n, d = Z.shape
+    #     n_layers = len(self.params)
+
+    #     fullbatch_mode = True if n <= self.__batch_size__ or self.__batch_size__ is None else False
+
+    #     if fullbatch_mode:
+    #         # (n, d)
+    #         zgrads = self.__zgrad_func__(Z, Y)
+    #         fgnorm = np.sqrt(np.mean( np.sum(zgrads**2, axis=1) ))            
+    #         if self.__FW__:
+    #             eta = 1./fgnorm
+    #         else:
+    #             eta = self.__eta__ * fgnorm
+            
+    #         self.solve_gradient(X, Z, zgrads, n_layers)
+    #         Zl = self.approximate_gradient(X, Z, n_layers)
+
+    #         eta = self.__current_itr__ + 1
+
+    #         if self.__nesterov__ and self.__velocity__ is None:
+    #             self.__velocity__ = np.zeros( shape=Z.shape ) 
+
+    #         if self.__nesterov__:
+    #             self.__velocity__ = self.__momentum__ * self.__velocity__ \
+    #                                 + eta * zgrads
+
+    #             Wl = __dot__(Zl.T, eta * zgrads
+    #                          + self.__momentum__ * self.__velocity__)
+    #         else:
+    #             # Zl: (n,emb_dim), zgrads: (n,d)
+    #             # Wl: (emb_dim,d)
+    #             Wl = __dot__(Zl.T, eta * zgrads)
+    #     else:
+    #         Wl = np.zeros(shape=(d, d), dtype=theano.config.floatX)
+    #         zgrads = []
+    #         for i, start in enumerate(range(0, n, self.__batch_size__)):
+    #             end = min(n, start + self.__batch_size__)
+    #             Zb = Z[start:end]
+    #             Yb = Y[start:end]
+    #             b = Zb.shape[0]
+    #             zgrads.append(self.__zgrad_func__(Zb, Yb) * float(b) / float(n))
+
+    #         zgrads = np.vstack(zgrads)
+    #         fgnorm = np.sqrt(np.mean( np.sum(zgrads**2, axis=1) ))            
+    #         if self.__FW__:
+    #             eta = 1./fgnorm
+    #         else:
+    #             eta = self.__eta__ * fgnorm            
+            
+    #         self.solve_gradient(X, Z, zgrads, n_layers)
+
+    #         for i, start in enumerate(range(0, n, self.__batch_size__)):
+    #             end = min(n, start + self.__batch_size__)
+    #             Xb = X[start:end]
+    #             Zb = Z[start:end]
+    #             Yb = Y[start:end]
+    #             zgradb = zgrads[start:end]
+    #             Zlb = self.approximate_gradient(Xb, Zb, n_layers)
+
+    #             if self.__nesterov__:
+    #                 if self.__velocity__ is None:
+    #                     self.__velocity__ = [ np.zeros( shape=Zb.shape ) ]
+    #                 elif i+1 > len( self.__velocity__ ):
+    #                     self.__velocity__.append( np.zeros( shape=Zb.shape ) )
+             
+    #             if self.__nesterov__:
+    #                 self.__velocity__[i] = self.__momentum__ * self.__velocity__[i] \
+    #                                        + eta * zgradb
+    #                 # (emb_dim,d)
+    #                 Wl += __dot__(Zlb.T, eta * zgradb
+    #                                + self.__momentum__ * self.__velocity__[i])
+    #             else:
+    #                 Wl += __dot__(Zlb.T, eta * zgradb)
+
+    #     self.params.append(Wl)
+    #     # print("eta: %f, fgnorm: %f" % (eta, fgnorm))        
         
-    def apply(self, X, Z_, wr, lfrom=0):
+    def apply(self, X, Z_, lfrom=0):
         """
          Perform functional gradient descent.
         """
@@ -217,29 +337,26 @@ class ResGrad(object):
         shape = Z_.shape
 
         if fullbatch_mode:
+            
             Z = np.array(Z_)
-            if wr>0:
-                Z *= 1. - wr
                 
-            for i, Wl in enumerate(self.params[lfrom:]):
+            for i, (A1,A2) in enumerate(self.params[lfrom:]):
                 l = lfrom + i
-                Zk = self.approximate_gradient(X, Z, l)
-                Tk = __dot__(Zk, Wl)
-                if self.__FW__:
-                    scale = 2./(self.__eta__+l)
-                    Tk *= scale
-                    Z *= 1.-scale
-                Z -= Tk
-
+                e2, e1 = self.approximate_gradient(X, Z, l)
+                FG = __dot__(e1, A1) + __dot__(e2, A2)
+                scale = 2./(self.__eta__+l)
+                FG *= scale
+                Z *= 1.-scale
+                Z += FG
             return Z
         else:
+            print("only fullbach_mode is available.")
+            sys.exit(-1)
             Z = []
             for start in range(0, n, self.__batch_size__):
                 end = min(n, start + self.__batch_size__)
                 Xb = X[start:end]
                 Zb = np.array(Z_[start:end])
-                if wr>0:
-                    Zb *= 1. - wr
                 shape = Zb.shape
 
                 for i, Wl in enumerate(self.params[lfrom:]):

@@ -162,7 +162,10 @@ def Loss(X, Y, ltype=u'cross_entropy'):
     elif ltype == 'abs':
         diff = T.abs_(X - Y)
         loss = T.mean(diff)
-        return loss        
+        return loss
+    elif ltype == 'inner_prod':
+        loss = - T.mean( T.dot(X,Y.T)[T.arange(X.shape[0]),T.arange(X.shape[0])] )
+        return loss
     else:
         sys.exit(-1)
 

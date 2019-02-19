@@ -38,7 +38,6 @@ def get_hyperparams(n_data, input_dim, n_class):
                'resblock_hparams': resblock_hparams,
                'fg_eta': 1e-1,
                'max_iters': 30,
-               'wr' : 1. / n_data,
                'seed': 1}
 
     return hparams

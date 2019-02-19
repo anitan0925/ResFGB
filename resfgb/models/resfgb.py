@@ -17,7 +17,7 @@ logger = getLogger(__name__)
 
 class ResFGB(object):
     def __init__(self, model_type='logistic', model_hparams={}, resblock_hparams={},
-                 fg_eta=None, max_iters=10, seed=99, wr=0., proc_batch_size=10000):
+                 fg_eta=None, max_iters=10, seed=99, proc_batch_size=10000):
 
         self.show_param(model_type,
                         model_hparams['tune_eta'],
@@ -40,7 +40,6 @@ class ResFGB(object):
             logger.log(ERROR, 'invalid model_type: {0}'.format(model_type))
             sys.exit(-1)
 
-        self.__wr__ = wr
         self.__max_iters__ = max_iters
         self.__fg__ = ResGrad(self.__model__, eta=fg_eta,
                               resblock_hparams=resblock_hparams,
@@ -56,7 +55,7 @@ class ResFGB(object):
 
     def evaluate(self, Z, Y, sample_f=True):
         if sample_f:
-            Z = self.__fg__.predict(Z, Z, self.__wr__)
+            Z = self.__fg__.predict(Z, Z)
             loss, acc = self.__model__.evaluate(Z, Y)
         else:
             loss, acc = self.__model__.evaluate(Z, Y)
@@ -86,9 +85,9 @@ class ResFGB(object):
             #----- apply functional gradient -----
             stime = time.time()
             if n_iter >= 1:
-                Z = self.__fg__.apply(X, Z, self.__wr__, lfrom=n_iter - 1)
+                Z = self.__fg__.apply(X, Z, lfrom=n_iter - 1)
                 if monitor:
-                    Zv = self.__fg__.apply(Xv, Zv, self.__wr__, lfrom=n_iter - 1)
+                    Zv = self.__fg__.apply(Xv, Zv, lfrom=n_iter - 1)
 
             #----- fit and evaluate -----
             self.__model__.optimizer.reset_func()
@@ -134,9 +133,9 @@ class ResFGB(object):
         #----- apply functional gradient -----
         stime = time.time()
         if self.__max_iters__ >= 1:
-            Z = self.__fg__.apply(X, Z, self.__wr__, lfrom=self.__max_iters__ - 1)
+            Z = self.__fg__.apply(X, Z, lfrom=self.__max_iters__ - 1)
             if monitor:
-                Zv = self.__fg__.apply(Xv, Zv, self.__wr__, lfrom=self.__max_iters__ - 1)
+                Zv = self.__fg__.apply(Xv, Zv, lfrom=self.__max_iters__ - 1)
 
         #----- fit and evaluate -----
         self.__model__.optimizer.reset_func()

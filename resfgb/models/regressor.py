@@ -306,7 +306,7 @@ class Regressor2(Model):
 
                 train_loss = self.evaluate(X, Z, Y)
                 if np.isnan(train_loss) or np.isinf(train_loss) \
-                   or (2 * init_train_loss + 1) <= train_loss:
+                   or (init_train_loss + np.abs(init_train_loss)+ 1) <= train_loss:
                     eta = self.optimizer.get_eta() / 2.
                     self.optimizer.set_eta(eta)
                     success = False
