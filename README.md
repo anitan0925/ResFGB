@@ -1,3 +1,6 @@
+Remark: The code is updated from the ICML version. The ICML version corresponds to a commit on May 25, 2018.
+  
+
 # ResFGB
 This is a Theano(>=1.0.0) implementation of "[Functional gradient boosting based on residual network perception](https://arxiv.org/abs/1802.09031)".
 
